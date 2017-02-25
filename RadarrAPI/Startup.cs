@@ -10,7 +10,7 @@ using Octokit;
 using RadarrAPI.Database;
 using RadarrAPI.Release;
 using Microsoft.EntityFrameworkCore;
-using MySql.Data.MySqlClient;
+using NLog.Web;
 
 namespace RadarrAPI
 {
@@ -18,6 +18,8 @@ namespace RadarrAPI
     {
         public Startup(IHostingEnvironment env)
         {
+            env.ConfigureNLog("nlog.config");
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json", true, true)
@@ -52,9 +54,7 @@ namespace RadarrAPI
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             loggerFactory.AddNLog();
-            
-            env.ConfigureNLog("nlog.config");
-
+            app.AddNLogWeb();
             app.UseMvc();
         }
     }

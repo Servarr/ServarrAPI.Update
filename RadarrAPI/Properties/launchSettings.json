@@ -1,9 +1,9 @@
-{
+﻿{
   "iisSettings": {
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:61197/",
+      "applicationUrl": "http://localhost:53441/",
       "sslPort": 0
     }
   },
@@ -19,10 +19,11 @@
     "RadarrAPI": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "http://localhost:5000/v1/update/nightly/changes?version=0.2.0.0&os=windows",
+      "launchUrl": "http://localhost:53442/v1/update/nightly/changes?version=0.2.0.0&os=windows",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "applicationUrl": "http://localhost:53442"
     }
   }
 }

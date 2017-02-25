@@ -184,9 +184,6 @@ namespace RadarrAPI.Release.AppVeyor
                     _lastBuildId = build.BuildId;
                 }
             }
-
-            Logger.Warn($"Fetched builds: " + history.Builds.Count);
-            Logger.Warn($"Last build id: " + _lastBuildId);
         }
     }
 }
