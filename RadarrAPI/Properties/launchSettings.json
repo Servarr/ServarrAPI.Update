@@ -10,7 +10,7 @@
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "api/values",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
@@ -18,7 +18,7 @@
     },
     "RadarrAPI": {
       "commandName": "Project",
-      "launchBrowser": true,
+      "launchBrowser": false,
       "launchUrl": "http://localhost:53442/v1/update/nightly/changes?version=0.2.0.0&os=windows",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

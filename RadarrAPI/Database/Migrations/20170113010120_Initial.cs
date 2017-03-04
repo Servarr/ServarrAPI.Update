@@ -11,13 +11,12 @@ namespace RadarrAPI.Database.Migrations
                 name: "Updates",
                 columns: table => new
                 {
-                    UpdateEntityId = table.Column<int>(nullable: false)
-                        .Annotation("MySql:ValueGeneratedOnAdd", true),
-                    Branch = table.Column<int>(nullable: false),
-                    Fixed = table.Column<string>(nullable: true),
-                    New = table.Column<string>(nullable: true),
+                    UpdateEntityId = table.Column<int>(nullable: false).Annotation("MySql:ValueGeneratedOnAdd", true),
+                    Version = table.Column<string>(nullable: true),
                     ReleaseDate = table.Column<DateTime>(nullable: false),
-                    Version = table.Column<string>(nullable: true)
+                    New = table.Column<string>(nullable: true),
+                    Fixed = table.Column<string>(nullable: true),
+                    Branch = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -31,8 +30,8 @@ namespace RadarrAPI.Database.Migrations
                     UpdateEntityId = table.Column<int>(nullable: false),
                     OperatingSystem = table.Column<int>(nullable: false),
                     Filename = table.Column<string>(nullable: true),
-                    Hash = table.Column<string>(nullable: true),
-                    Url = table.Column<string>(nullable: true)
+                    Url = table.Column<string>(nullable: true),
+                    Hash = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {

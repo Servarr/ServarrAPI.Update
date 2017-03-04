@@ -14,6 +14,7 @@
     <PackageReference Include="Octokit" Version="0.24.1-alpha0001" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="1.1.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql.Design" Version="1.1.0" />
+    <PackageReference Include="TraktApiSharp" Version="1.0.0-alpha1" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.0-msbuild3-final" />

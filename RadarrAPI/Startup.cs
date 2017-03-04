@@ -12,6 +12,7 @@ using RadarrAPI.Release;
 using Microsoft.EntityFrameworkCore;
 using NLog.Web;
 using StatsdClient;
+using TraktApiSharp;
 
 namespace RadarrAPI
 {
@@ -40,6 +41,7 @@ namespace RadarrAPI
             services.Configure<Config>(Configuration);
             services.AddSingleton(new GitHubClient(new ProductHeaderValue("RadarrAPI")));
             services.AddSingleton<ReleaseService>();
+            services.AddSingleton(new TraktClient(Configuration.GetSection("Trakt")["ClientId"], Configuration.GetSection("Trakt")["ClientSecret"]));
             services.AddMvc();
 
             // Add database
