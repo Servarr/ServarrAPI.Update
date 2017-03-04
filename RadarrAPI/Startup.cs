@@ -11,6 +11,7 @@ using RadarrAPI.Database;
 using RadarrAPI.Release;
 using Microsoft.EntityFrameworkCore;
 using NLog.Web;
+using StatsdClient;
 
 namespace RadarrAPI
 {
@@ -28,14 +29,8 @@ namespace RadarrAPI
 
             Configuration = builder.Build();
             
-            // Check data path
-            if (!Path.IsPathRooted(Configuration["DataDirectory"]))
-            {
-                throw new Exception("DataDirectory path must be absolute.");
-            }
-
-            // Create
-            Directory.CreateDirectory(Configuration["DataDirectory"]);
+            SetupDataDirectory();
+            SetupDatadog();
         }
 
         public IConfigurationRoot Configuration { get; }
@@ -51,11 +46,41 @@ namespace RadarrAPI
             services.AddDbContext<DatabaseContext>(o => o.UseMySql(Configuration["Database"]));
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime applicationLifetime)
         {
             loggerFactory.AddNLog();
             app.AddNLogWeb();
             app.UseMvc();
+
+            applicationLifetime.ApplicationStarted.Register(() => DogStatsd.Event("RadarrAPI", "RadarrAPI just started."));
+        }
+
+        private void SetupDataDirectory()
+        {
+            // Check data path
+            if (!Path.IsPathRooted(Configuration["DataDirectory"]))
+            {
+                throw new Exception("DataDirectory path must be absolute.");
+            }
+
+            // Create
+            Directory.CreateDirectory(Configuration["DataDirectory"]);
+        }
+
+        private void SetupDatadog()
+        {
+            var server = Configuration.GetSection("DataDog")["Server"];
+            var port = Configuration.GetSection("DataDog").GetValue<int>("Port");
+            var prefix = Configuration.GetSection("DataDog")["Prefix"];
+
+            if (string.IsNullOrWhiteSpace(server) || port == 0) return;
+
+            DogStatsd.Configure(new StatsdConfig
+            {
+                StatsdServerName = server,
+                StatsdPort = port,
+                Prefix = prefix
+            });
         }
     }
 }

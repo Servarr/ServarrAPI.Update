@@ -29,9 +29,6 @@ namespace RadarrAPI.Release.AppVeyor.Responses
 
         [JsonProperty("status", Required = Required.Always)]
         public string Status { get; set; }
-
-        [JsonProperty("committerUsername", Required = Required.Always)]
-        public string CommiterUsername { get; set; }
         
         public DateTimeOffset? Started { get; set; }
 
