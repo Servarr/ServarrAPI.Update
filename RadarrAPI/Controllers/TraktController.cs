@@ -69,7 +69,25 @@ namespace RadarrAPI.Controllers
                 return BadRequest("Received trakt token was invalid.");
             }
 
-            return Redirect($"{traktEntity.Target}?oauth={traktAuth.AccessToken}&refresh={traktAuth.RefreshToken}");
+            return Redirect($"{traktEntity.Target}?access={traktAuth.AccessToken}&refresh={traktAuth.RefreshToken}");
+        }
+
+        [Route("refresh")]
+        [HttpGet]
+        public async Task<IActionResult> TraktCallback([FromQuery(Name = "refresh")] string refresh)
+        {
+            if (string.IsNullOrWhiteSpace(refresh))
+            {
+                return BadRequest("Invalid refresh code specified.");
+            }
+
+            var traktAuth = await _trakt.OAuth.RefreshAuthorizationAsync(refresh, _trakt.ClientId, _trakt.ClientSecret, GetRedirectUri());
+            if (!traktAuth.IsValid)
+            {
+                return BadRequest("Received trakt token was invalid.");
+            }
+
+            return Ok(traktAuth);
         }
 
         private string GetRedirectUri()
