@@ -22,9 +22,6 @@ namespace RadarrAPI.Release.AppVeyor
     {
         private const string AccountName = "galli-leo";
         private const string ProjectSlug = "radarr-usby1";
-        private const int TotalArtifactsCount = 4;
-
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private readonly HttpClient _httpClient;
 
@@ -73,7 +70,7 @@ namespace RadarrAPI.Release.AppVeyor
                 // Filter out incomplete builds
                 var buildJob = buildExtended.Jobs.FirstOrDefault();
                 if (buildJob == null ||
-                    buildJob.ArtifactsCount != TotalArtifactsCount ||
+                    buildJob.ArtifactsCount == 0 ||
                     buildJob.Status != "success" ||
                     !buildExtended.Started.HasValue) continue;
 
