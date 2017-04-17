@@ -11,6 +11,9 @@ namespace RadarrAPI.Release.AppVeyor.Responses
         [JsonProperty("artifactsCount", Required = Required.Always)]
         public int ArtifactsCount { get; set; }
 
+        [JsonProperty("failedTestsCount", Required = Required.Always)]
+        public int FailedTestsCount { get; set; }
+
         [JsonProperty("status", Required = Required.Always)]
         public string Status { get; set; }
 
