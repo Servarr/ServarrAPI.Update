@@ -61,8 +61,7 @@ namespace RadarrAPI.Release.AppVeyor
                 // - unsuccesful builds,
                 // - tagged builds (duplicate).
                 if (build.PullRequestId.HasValue ||
-                    build.IsTag ||
-                    build.Status != "success") continue;
+                    build.IsTag) continue;
 
                 var buildExtendedData = await _httpClient.GetStringAsync($"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/build/{build.Version}");
                 var buildExtended = JsonConvert.DeserializeObject<AppVeyorProjectLastBuild>(buildExtendedData).Build;
@@ -71,7 +70,6 @@ namespace RadarrAPI.Release.AppVeyor
                 var buildJob = buildExtended.Jobs.FirstOrDefault();
                 if (buildJob == null ||
                     buildJob.ArtifactsCount == 0 ||
-                    buildJob.Status != "success" ||
                     !buildExtended.Started.HasValue) continue;
 
                 // Grab artifacts
