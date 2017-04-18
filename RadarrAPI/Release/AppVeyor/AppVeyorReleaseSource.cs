@@ -70,7 +70,6 @@ namespace RadarrAPI.Release.AppVeyor
                 var buildJob = buildExtended.Jobs.FirstOrDefault();
                 if (buildJob == null ||
                     buildJob.ArtifactsCount == 0 ||
-                    buildJob.FailedTestsCount >= 5 ||
                     !buildExtended.Started.HasValue) continue;
 
                 // Grab artifacts
