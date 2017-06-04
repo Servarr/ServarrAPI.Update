@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using RadarrAPI.Database;
 using RadarrAPI.Database.Models;
 using TraktApiSharp;
+using TraktApiSharp.Exceptions;
 
 namespace RadarrAPI.Controllers
 {
@@ -80,14 +81,25 @@ namespace RadarrAPI.Controllers
             {
                 return BadRequest("Invalid refresh code specified.");
             }
-
-            var traktAuth = await _trakt.OAuth.RefreshAuthorizationAsync(refresh, _trakt.ClientId, _trakt.ClientSecret, GetRedirectUri());
-            if (!traktAuth.IsValid)
+            
+            try
             {
-                return BadRequest("Received trakt token was invalid.");
-            }
+                var traktAuth = await _trakt.OAuth.RefreshAuthorizationAsync(refresh, _trakt.ClientId, _trakt.ClientSecret, GetRedirectUri());
+                if (!traktAuth.IsValid)
+                {
+                    return BadRequest("Received trakt token was invalid.");
+                }
 
-            return Ok(traktAuth);
+                return Ok(traktAuth);
+            }
+            catch (TraktAuthenticationException e)
+            {
+                return StatusCode(401, new
+                {
+                    Message = "Invalid refresh token specified.",
+                    MessageTrakt = e.Message.Replace("\n", ", ")
+                });
+            }
         }
 
         private string GetRedirectUri()
