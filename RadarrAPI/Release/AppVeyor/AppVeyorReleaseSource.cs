@@ -20,8 +20,8 @@ namespace RadarrAPI.Release.AppVeyor
 {
     public class AppVeyorReleaseSource : ReleaseSourceBase
     {
-        private const string AccountName = "galli-leo";
-        private const string ProjectSlug = "radarr-usby1";
+        private const string AccountName = "lidarr";
+        private const string ProjectSlug = "lidarr";
 
         private readonly HttpClient _httpClient;
 
