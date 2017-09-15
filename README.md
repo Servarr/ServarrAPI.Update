@@ -1,4 +1,4 @@
-RadarrAPI [![AppVeyor](https://img.shields.io/appveyor/ci/AeonLucid/radarrapi-bahv9/master.svg?maxAge=60&style=flat-square)](https://ci.appveyor.com/project/AeonLucid/radarrapi-bahv9)
+RadarrAPI [![AppVeyor](https://img.shields.io/appveyor/ci/lidarr/lidarrapi-update/master.svg?maxAge=60&style=flat-square)](https://ci.appveyor.com/project/lidarr/lidarrapi-update)
 ===================
 
 *Deployment of RadarrAPI is done manually to https://radarr.aeonlucid.com/ by [@AeonLucid](https://github.com/AeonLucid)*.
