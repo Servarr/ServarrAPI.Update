@@ -21,3 +21,8 @@ init:
 build_script:
   - ps: dotnet restore --no-cache
   - ps: dotnet build .\RadarrAPI\RadarrAPI.csproj -c Release
+
+artifacts:
+  - path: '_artifacts\*.zip'
+  - path: '_artifacts\*.exe'
+  - path: '_artifacts\*.tar.gz'
