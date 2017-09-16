@@ -23,4 +23,4 @@ build_script:
   - ps: dotnet build .\RadarrAPI\RadarrAPI.csproj -c Release
 
 artifacts:
-  - path: '.\RadarrAPI\bin\Release\netcoreapp1.1\RadarrAPI.dll'
+  - path: 'C:\projects\lidarrapi-update\RadarrAPI\bin\Any CPU\Release\netcoreapp1.1\RadarrAPI.dll'
