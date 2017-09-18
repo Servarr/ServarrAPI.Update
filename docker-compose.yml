@@ -1,0 +1,23 @@
+version: '3'
+services:
+    mysql:
+        image: mysql
+
+        environment:
+            - MYSQL_ROOT_PASSWORD=
+
+    lidarrupdate:
+        build: .
+
+        ports:
+            - "5001:5000"
+
+        links:
+            - mysql
+
+        environment:
+            - DataDirectory=/data
+            - Database="server=127.0.0.1;user id=root;password=${MYSQL_ROOT_PASSWORD};database=lidarrupdate;CharSet=utf8mb4"
+
+        volumes:
+            - ./lidarrupdate-data:/data
