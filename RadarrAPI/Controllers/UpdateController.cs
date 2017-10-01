@@ -4,10 +4,10 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RadarrAPI.Database;
-using RadarrAPI.Update;
 using RadarrAPI.Update.Data;
 using StatsdClient;
 using Branch = RadarrAPI.Update.Branch;
+using OperatingSystem = RadarrAPI.Update.OperatingSystem;
 
 namespace RadarrAPI.Controllers
 {

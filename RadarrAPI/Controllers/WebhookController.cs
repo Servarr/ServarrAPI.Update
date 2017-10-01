@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using RadarrAPI.Release;
 using RadarrAPI.Update;
@@ -9,6 +10,7 @@ namespace RadarrAPI.Controllers
     public class WebhookController
     {
         private readonly ReleaseService _releaseService;
+        
         private readonly Config _config;
 
         public WebhookController(ReleaseService releaseService, IOptions<Config> optionsConfig)
@@ -19,14 +21,14 @@ namespace RadarrAPI.Controllers
 
         [Route("refresh")]
         [HttpGet, HttpPost]
-        public string Refresh([FromQuery] Branch branch, [FromQuery(Name = "api_key")] string apiKey)
+        public async Task<string> Refresh([FromQuery] Branch branch, [FromQuery(Name = "api_key")] string apiKey)
         {
             if (!_config.ApiKey.Equals(apiKey))
             {
                 return "No, thank you.";
             }
 
-            _releaseService.UpdateReleases(branch);
+            await _releaseService.UpdateReleasesAsync(branch);
 
             return "Thank you.";
         }

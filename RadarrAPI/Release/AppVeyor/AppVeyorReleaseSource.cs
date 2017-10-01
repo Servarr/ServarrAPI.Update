@@ -9,39 +9,50 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using NLog;
 using RadarrAPI.Database;
 using RadarrAPI.Release.AppVeyor.Responses;
 using RadarrAPI.Update;
 using Microsoft.EntityFrameworkCore;
 using RadarrAPI.Database.Models;
+using OperatingSystem = RadarrAPI.Update.OperatingSystem;
 
 namespace RadarrAPI.Release.AppVeyor
 {
     public class AppVeyorReleaseSource : ReleaseSourceBase
     {
         private const string AccountName = "galli-leo";
+        
         private const string ProjectSlug = "radarr-usby1";
 
+        private static int? _lastBuildId;
+
+        private readonly DatabaseContext _database;
+        
+        private readonly Config _config;
+        
         private readonly HttpClient _httpClient;
 
         private readonly HttpClient _downloadHttpClient;
 
-        private int? _lastBuildId;
-
-        public AppVeyorReleaseSource(IServiceProvider serviceProvider, Branch branch) : base(serviceProvider, branch)
+        public AppVeyorReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
-            var config = serviceProvider.GetService<IOptions<Config>>().Value;
+            _database = database;
+            _config = config.Value;
 
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config.AppVeyorApiKey);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _config.AppVeyorApiKey);
 
             _downloadHttpClient = new HttpClient();
         }
 
         protected override async Task DoFetchReleasesAsync()
         {
+            if (ReleaseBranch == Branch.Unknown)
+            {
+                throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
+            }
+            
             var historyUrl = $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
 
             var historyData = await _httpClient.GetStringAsync(historyUrl);
@@ -49,9 +60,8 @@ namespace RadarrAPI.Release.AppVeyor
 
             // Store here temporarily so we don't break on not processed builds.
             var lastBuild = _lastBuildId;
-            var database = ServiceProvider.GetService<DatabaseContext>();
 
-            foreach (var build in history.Builds)
+            foreach (var build in history.Builds.Take(5).ToList()) // Only take last 5.
             {
                 if (lastBuild.HasValue &&
                     lastBuild.Value >= build.BuildId) break;
@@ -78,7 +88,7 @@ namespace RadarrAPI.Release.AppVeyor
                 var artifacts = JsonConvert.DeserializeObject<AppVeyorArtifact[]>(artifactsData);
 
                 // Get an updateEntity
-                var updateEntity = database.UpdateEntities
+                var updateEntity = _database.UpdateEntities
                     .Include(x => x.UpdateFiles)
                     .FirstOrDefault(x => x.Version.Equals(buildExtended.Version) && x.Branch.Equals(ReleaseBranch));
 
@@ -103,7 +113,7 @@ namespace RadarrAPI.Release.AppVeyor
                     }
 
                     // Start tracking this object
-                    await database.AddAsync(updateEntity);
+                    await _database.AddAsync(updateEntity);
                 }
 
                 // Process artifacts
@@ -130,7 +140,7 @@ namespace RadarrAPI.Release.AppVeyor
                     }
 
                     // Check if exists in database.
-                    var updateFileEntity = database.UpdateFileEntities
+                    var updateFileEntity = _database.UpdateFileEntities
                         .FirstOrDefault(x =>
                             x.UpdateEntityId == updateEntity.UpdateEntityId &&
                             x.OperatingSystem == operatingSystem);
@@ -140,7 +150,7 @@ namespace RadarrAPI.Release.AppVeyor
                     // Calculate the hash of the zip file.
                     var releaseDownloadUrl = $"{artifactsPath}/{artifact.FileName}";
                     var releaseFileName = artifact.FileName.Split('/').Last();
-                    var releaseZip = Path.Combine(Config.DataDirectory, ReleaseBranch.ToString(), releaseFileName);
+                    var releaseZip = Path.Combine(_config.DataDirectory, ReleaseBranch.ToString(), releaseFileName);
                     string releaseHash;
 
                     if (!File.Exists(releaseZip))
@@ -170,7 +180,7 @@ namespace RadarrAPI.Release.AppVeyor
                 }
 
                 // Save all changes to the database.
-                await database.SaveChangesAsync();
+                await _database.SaveChangesAsync();
 
                 // Make sure we atleast skip this build next time.
                 if (_lastBuildId == null ||
