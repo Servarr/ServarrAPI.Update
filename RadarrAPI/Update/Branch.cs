@@ -6,10 +6,9 @@
     /// </summary>
     public enum Branch
     {
-
-        Master = 0,
+        Unknown = 0,
         Develop = 1,
-        Nightly = 2
-
+        Nightly = 2,
+        Master = 3
     }
 }

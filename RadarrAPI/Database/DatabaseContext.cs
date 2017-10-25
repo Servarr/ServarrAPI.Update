@@ -1,12 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using RadarrAPI.Database.Models;
 
 namespace RadarrAPI.Database
 {
     public class DatabaseContext : DbContext
     {
-
         public DatabaseContext(DbContextOptions options) : base(options)
         {
         }

@@ -6,37 +6,47 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Octokit;
 using RadarrAPI.Database;
 using RadarrAPI.Database.Models;
-using RadarrAPI.Update;
 using RadarrAPI.Util;
 using Branch = RadarrAPI.Update.Branch;
+using OperatingSystem = RadarrAPI.Update.OperatingSystem;
 
 namespace RadarrAPI.Release.Github
 {
     public class GithubReleaseSource : ReleaseSourceBase
     {
+        private readonly DatabaseContext _database;
+        
+        private readonly Config _config;
+
         private readonly GitHubClient _gitHubClient;
+        
         private readonly HttpClient _httpClient;
 
-        public GithubReleaseSource(IServiceProvider serviceProvider, Branch branch) : base(serviceProvider, branch)
+        public GithubReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
+            _database = database;
+            _config = config.Value;
             _gitHubClient = new GitHubClient(new ProductHeaderValue("RadarrAPI"));
             _httpClient = new HttpClient();
         }
 
         protected override async Task DoFetchReleasesAsync()
         {
+            if (ReleaseBranch == Branch.Unknown)
+            {
+                throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
+            }
+            
             var releases = await _gitHubClient.Repository.Release.GetAll("Radarr", "Radarr");
             var validReleases = releases.Where(r =>
                 r.TagName.StartsWith("v") &&
                 VersionUtil.IsValid(r.TagName.Substring(1)) &&
                 r.Prerelease == (ReleaseBranch == Branch.Develop))
                 .Reverse();
-
-            var database = ServiceProvider.GetService<DatabaseContext>();
 
             foreach (var release in validReleases)
             {
@@ -46,7 +56,7 @@ namespace RadarrAPI.Release.Github
                 var version = release.TagName.Substring(1);
 
                 // Get an updateEntity
-                var updateEntity = database.UpdateEntities
+                var updateEntity = _database.UpdateEntities
                     .Include(x => x.UpdateFiles)
                     .FirstOrDefault(x => x.Version.Equals(version) && x.Branch.Equals(ReleaseBranch));
 
@@ -82,7 +92,7 @@ namespace RadarrAPI.Release.Github
                     }
 
                     // Start tracking this object
-                    await database.AddAsync(updateEntity);
+                    await _database.AddAsync(updateEntity);
                 }
 
                 // Process releases
@@ -109,7 +119,7 @@ namespace RadarrAPI.Release.Github
                     }
 
                     // Check if exists in database.
-                    var updateFileEntity = database.UpdateFileEntities
+                    var updateFileEntity = _database.UpdateFileEntities
                         .FirstOrDefault(x => 
                             x.UpdateEntityId == updateEntity.UpdateEntityId && 
                             x.OperatingSystem == operatingSystem);
@@ -117,7 +127,7 @@ namespace RadarrAPI.Release.Github
                     if (updateFileEntity != null) continue;
 
                     // Calculate the hash of the zip file.
-                    var releaseZip = Path.Combine(Config.DataDirectory, ReleaseBranch.ToString(), releaseAsset.Name);
+                    var releaseZip = Path.Combine(_config.DataDirectory, ReleaseBranch.ToString(), releaseAsset.Name);
                     string releaseHash;
 
                     if (!File.Exists(releaseZip))
@@ -147,7 +157,7 @@ namespace RadarrAPI.Release.Github
                 }
 
                 // Save all changes to the database.
-                await database.SaveChangesAsync();
+                await _database.SaveChangesAsync();
             }
         }
     }
