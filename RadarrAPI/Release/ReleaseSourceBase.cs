@@ -1,33 +1,23 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using RadarrAPI.Update;
 
 namespace RadarrAPI.Release
 {
     public abstract class ReleaseSourceBase
     {
+        protected ReleaseSourceBase()
+        {
+            ReleaseBranch = Branch.Unknown;
+            FetchSemaphore = new Semaphore(1, 1);
+        }
+
+        public Branch ReleaseBranch { get; set; }
+        
         /// <summary>
         ///     Used to have only one thread fetch releases.
         /// </summary>
-        private readonly Semaphore _fetchSemaphore;
-
-        protected ReleaseSourceBase(IServiceProvider serviceProvider, Branch branch)
-        {
-            ServiceProvider = serviceProvider;
-            ReleaseBranch = branch;
-            Config = ServiceProvider.GetService<IOptions<Config>>().Value;
-            
-            _fetchSemaphore = new Semaphore(1, 1);
-        }
-
-        public IServiceProvider ServiceProvider { get; set; }
-
-        public Branch ReleaseBranch { get; }
-
-        public Config Config { get; set; }
+        private Semaphore FetchSemaphore { get; }
 
         public async Task StartFetchReleasesAsync()
         {
@@ -35,7 +25,7 @@ namespace RadarrAPI.Release
 
             try
             {
-                hasLock = _fetchSemaphore.WaitOne();
+                hasLock = FetchSemaphore.WaitOne();
 
                 if (hasLock)
                 {
@@ -46,7 +36,7 @@ namespace RadarrAPI.Release
             {
                 if (hasLock)
                 {
-                    _fetchSemaphore.Release();
+                    FetchSemaphore.Release();
                 }
             }
         }

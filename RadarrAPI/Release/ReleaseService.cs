@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
+using RadarrAPI.Database;
 using RadarrAPI.Release.AppVeyor;
 using RadarrAPI.Release.Github;
 using RadarrAPI.Update;
@@ -12,35 +14,30 @@ namespace RadarrAPI.Release
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        private readonly ConcurrentDictionary<Branch, ReleaseSourceBase> _releaseBranches;
+        private readonly IServiceProvider _serviceProvider;
+        
+        private readonly ConcurrentDictionary<Branch, Type> _releaseBranches;
 
-        public ReleaseService(IServiceProvider serviceProvider)
+        public ReleaseService(IServiceProvider serviceProvider, DatabaseContext databaseContext)
         {
-            _releaseBranches = new ConcurrentDictionary<Branch, ReleaseSourceBase>();
-            _releaseBranches.TryAdd(Branch.Develop, new GithubReleaseSource(serviceProvider, Branch.Develop));
-            _releaseBranches.TryAdd(Branch.Nightly, new AppVeyorReleaseSource(serviceProvider, Branch.Nightly));
+            _serviceProvider = serviceProvider;
+            _releaseBranches = new ConcurrentDictionary<Branch, Type>();
+            _releaseBranches.TryAdd(Branch.Develop, typeof(GithubReleaseSource)); // new GithubReleaseSource(serviceProvider, Branch.Develop));
+            _releaseBranches.TryAdd(Branch.Nightly, typeof(AppVeyorReleaseSource)); //new AppVeyorReleaseSource(serviceProvider, Branch.Nightly));
         }
 
-        public void UpdateReleases(Branch branch)
+        public async Task UpdateReleasesAsync(Branch branch)
         {
-            ReleaseSourceBase releaseSourceBase;
-
-            if (!_releaseBranches.TryGetValue(branch, out releaseSourceBase))
+            if (!_releaseBranches.TryGetValue(branch, out var releaseSourceBaseType))
             {
                 throw new NotImplementedException($"{branch} does not have a release source.");
             }
+            
+            var releaseSourceInstance = (ReleaseSourceBase) _serviceProvider.GetRequiredService(releaseSourceBaseType);
 
-            Task.Factory.StartNew(async () =>
-            {
-                try
-                {
-                    await releaseSourceBase.StartFetchReleasesAsync();
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, $"UpdateReleases({branch}) threw an exception");
-                }
-            });
+            releaseSourceInstance.ReleaseBranch = branch;
+
+            await releaseSourceInstance.StartFetchReleasesAsync();
         }
     }
 }

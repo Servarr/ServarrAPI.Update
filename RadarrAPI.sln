@@ -1,34 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.3
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadarrAPI", "RadarrAPI\RadarrAPI.csproj", "{A2E9D642-2A33-464E-8330-135B3BA6B8BF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RadarrAPI", "RadarrAPI\RadarrAPI.csproj", "{100DDF07-706D-4428-9F8A-B81A6791B60D}"
 EndProject
 Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|Any CPU = Release|Any CPU
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Debug|x64.Build.0 = Debug|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Debug|x86.Build.0 = Debug|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Release|x64.ActiveCfg = Release|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Release|x64.Build.0 = Release|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Release|x86.ActiveCfg = Release|Any CPU
-		{A2E9D642-2A33-464E-8330-135B3BA6B8BF}.Release|x86.Build.0 = Release|Any CPU
-	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {967AD9C3-A215-4168-B591-67900BEFAB7D}
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{100DDF07-706D-4428-9F8A-B81A6791B60D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{100DDF07-706D-4428-9F8A-B81A6791B60D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{100DDF07-706D-4428-9F8A-B81A6791B60D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{100DDF07-706D-4428-9F8A-B81A6791B60D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
