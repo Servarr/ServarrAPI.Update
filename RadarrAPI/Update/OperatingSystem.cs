@@ -1,8 +1,8 @@
-﻿namespace RadarrAPI.Update
+﻿namespace LidarrAPI.Update
 {
     /// <summary>
     ///     Contains all possible operating systems
-    ///     supported by Radarr.
+    ///     supported by Lidarr.
     /// </summary>
     public enum OperatingSystem
     {

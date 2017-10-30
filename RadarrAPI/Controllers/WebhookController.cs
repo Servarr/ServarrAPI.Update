@@ -1,17 +1,16 @@
 ﻿using System.Threading.Tasks;
+using LidarrAPI.Release;
+using LidarrAPI.Update;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using RadarrAPI.Release;
-using RadarrAPI.Update;
 
-namespace RadarrAPI.Controllers
+namespace LidarrAPI.Controllers
 {
     [Route("v1/[controller]")]
     public class WebhookController
     {
-        private readonly ReleaseService _releaseService;
-        
         private readonly Config _config;
+        private readonly ReleaseService _releaseService;
 
         public WebhookController(ReleaseService releaseService, IOptions<Config> optionsConfig)
         {
@@ -20,7 +19,8 @@ namespace RadarrAPI.Controllers
         }
 
         [Route("refresh")]
-        [HttpGet, HttpPost]
+        [HttpGet]
+        [HttpPost]
         public async Task<string> Refresh([FromQuery] Branch branch, [FromQuery(Name = "api_key")] string apiKey)
         {
             if (!_config.ApiKey.Equals(apiKey))

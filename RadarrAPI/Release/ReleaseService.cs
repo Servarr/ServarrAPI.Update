@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
+using LidarrAPI.Database;
+using LidarrAPI.Release.AppVeyor;
+using LidarrAPI.Release.Github;
+using LidarrAPI.Update;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
-using RadarrAPI.Database;
-using RadarrAPI.Release.AppVeyor;
-using RadarrAPI.Release.Github;
-using RadarrAPI.Update;
 
-namespace RadarrAPI.Release
+namespace LidarrAPI.Release
 {
     public class ReleaseService
     {

@@ -2,13 +2,13 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LidarrAPI.Database;
+using LidarrAPI.Database.Models;
 using Microsoft.AspNetCore.Mvc;
-using RadarrAPI.Database;
-using RadarrAPI.Database.Models;
 using TraktApiSharp;
 using TraktApiSharp.Exceptions;
 
-namespace RadarrAPI.Controllers
+namespace LidarrAPI.Controllers
 {
     [Route("v1/[controller]")]
     public class TraktController : Controller
@@ -27,7 +27,8 @@ namespace RadarrAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> RedirectToTrakt([FromQuery(Name = "target")] string target)
         {
-            var validTarget = Uri.TryCreate(target, UriKind.Absolute, out Uri uriResult) && (uriResult.Scheme == "http" || uriResult.Scheme == "https");
+            var validTarget = Uri.TryCreate(target, UriKind.Absolute, out Uri uriResult) &&
+                              (uriResult.Scheme == "http" || uriResult.Scheme == "https");
             if (!validTarget)
             {
                 return BadRequest("Invalid target specified.");
@@ -42,13 +43,15 @@ namespace RadarrAPI.Controllers
 
             _database.Add(traktEntity);
             await _database.SaveChangesAsync();
-            
-            return Redirect(_trakt.OAuth.CreateAuthorizationUrl(_trakt.ClientId, GetRedirectUri(), traktEntity.State.ToString()));
+
+            return Redirect(_trakt.OAuth.CreateAuthorizationUrl(_trakt.ClientId, GetRedirectUri(),
+                traktEntity.State.ToString()));
         }
 
         [Route("callback")]
         [HttpGet]
-        public async Task<IActionResult> TraktCallback([FromQuery(Name = "code")] string code, [FromQuery(Name = "state")] string stateStr)
+        public async Task<IActionResult> TraktCallback([FromQuery(Name = "code")] string code,
+            [FromQuery(Name = "state")] string stateStr)
         {
             if (!Guid.TryParse(stateStr, out Guid state))
             {
@@ -64,7 +67,8 @@ namespace RadarrAPI.Controllers
             _database.Remove(traktEntity);
             await _database.SaveChangesAsync();
 
-            var traktAuth = await _trakt.OAuth.GetAuthorizationAsync(code, _trakt.ClientId, _trakt.ClientSecret, GetRedirectUri());
+            var traktAuth =
+                await _trakt.OAuth.GetAuthorizationAsync(code, _trakt.ClientId, _trakt.ClientSecret, GetRedirectUri());
             if (!traktAuth.IsValid)
             {
                 return BadRequest("Received trakt token was invalid.");
@@ -81,10 +85,11 @@ namespace RadarrAPI.Controllers
             {
                 return BadRequest("Invalid refresh code specified.");
             }
-            
+
             try
             {
-                var traktAuth = await _trakt.OAuth.RefreshAuthorizationAsync(refresh, _trakt.ClientId, _trakt.ClientSecret, GetRedirectUri());
+                var traktAuth = await _trakt.OAuth.RefreshAuthorizationAsync(refresh, _trakt.ClientId,
+                    _trakt.ClientSecret, GetRedirectUri());
                 if (!traktAuth.IsValid)
                 {
                     return BadRequest("Received trakt token was invalid.");

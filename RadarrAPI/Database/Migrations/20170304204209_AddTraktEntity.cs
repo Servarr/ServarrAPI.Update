@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace RadarrAPI.Database.Migrations
+namespace LidarrAPI.Database.Migrations
 {
     public partial class AddTraktEntity : Migration
     {

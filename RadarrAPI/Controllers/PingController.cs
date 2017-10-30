@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace RadarrAPI.Controllers
+namespace LidarrAPI.Controllers
 {
     [Route("v1/[controller]")]
     public class PingController

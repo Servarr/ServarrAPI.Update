@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using RadarrAPI.Database.Models;
+﻿using LidarrAPI.Database.Models;
+using Microsoft.EntityFrameworkCore;
 
-namespace RadarrAPI.Database
+namespace LidarrAPI.Database
 {
     public class DatabaseContext : DbContext
     {

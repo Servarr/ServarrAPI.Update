@@ -1,4 +1,4 @@
-﻿namespace RadarrAPI
+﻿namespace LidarrAPI
 {
     public class Config
     {

@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using LidarrAPI.Database;
+using LidarrAPI.Update;
+using LidarrAPI.Update.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using RadarrAPI.Database;
-using RadarrAPI.Update.Data;
 using StatsdClient;
-using Branch = RadarrAPI.Update.Branch;
-using OperatingSystem = RadarrAPI.Update.OperatingSystem;
+using OperatingSystem = LidarrAPI.Update.OperatingSystem;
 
-namespace RadarrAPI.Controllers
+namespace LidarrAPI.Controllers
 {
     [Route("v1/[controller]")]
     public class UpdateController : Controller
@@ -23,17 +23,19 @@ namespace RadarrAPI.Controllers
 
         [Route("{branch}/changes")]
         [HttpGet]
-        public object GetChanges([FromRoute(Name = "branch")]Branch updateBranch, [FromQuery(Name = "version")]string urlVersion, [FromQuery(Name = "os")]OperatingSystem operatingSystem)
+        public object GetChanges([FromRoute(Name = "branch")] Branch updateBranch,
+            [FromQuery(Name = "version")] string urlVersion, [FromQuery(Name = "os")] OperatingSystem operatingSystem)
         {
             using (DogStatsd.StartTimer("controller.update.get_changes.time"))
             {
                 DogStatsd.Increment("controller.update.get_changes.count");
 
                 var updates = _database.UpdateEntities
-                .Include(x => x.UpdateFiles)
-                .Where(x => x.Branch == updateBranch && x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
-                .OrderByDescending(x => x.ReleaseDate)
-                .Take(5);
+                    .Include(x => x.UpdateFiles)
+                    .Where(x => x.Branch == updateBranch &&
+                                x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
+                    .OrderByDescending(x => x.ReleaseDate)
+                    .Take(5);
 
                 var response = new List<UpdatePackage>();
 
@@ -71,7 +73,8 @@ namespace RadarrAPI.Controllers
 
         [Route("{branch}")]
         [HttpGet]
-        public object GetUpdates([FromRoute(Name = "branch")]Branch updateBranch, [FromQuery(Name = "version")]string urlVersion, [FromQuery(Name = "os")]OperatingSystem operatingSystem)
+        public object GetUpdates([FromRoute(Name = "branch")] Branch updateBranch,
+            [FromQuery(Name = "version")] string urlVersion, [FromQuery(Name = "os")] OperatingSystem operatingSystem)
         {
             // Check given version
             if (!Version.TryParse(urlVersion, out Version version))
@@ -85,11 +88,12 @@ namespace RadarrAPI.Controllers
             using (DogStatsd.StartTimer("controller.update.get_updates.time"))
             {
                 DogStatsd.Increment("controller.update.get_updates.count");
-                
+
                 // Grab latest update based on branch and operatingsystem
                 var update = _database.UpdateEntities
                     .Include(x => x.UpdateFiles)
-                    .Where(x => x.Branch == updateBranch && x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
+                    .Where(x => x.Branch == updateBranch &&
+                                x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
                     .OrderByDescending(x => x.ReleaseDate)
                     .Take(1)
                     .FirstOrDefault();

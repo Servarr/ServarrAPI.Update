@@ -6,17 +6,16 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
+using LidarrAPI.Database;
+using LidarrAPI.Database.Models;
+using LidarrAPI.Release.AppVeyor.Responses;
+using LidarrAPI.Update;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using RadarrAPI.Database;
-using RadarrAPI.Release.AppVeyor.Responses;
-using RadarrAPI.Update;
-using Microsoft.EntityFrameworkCore;
-using RadarrAPI.Database.Models;
-using OperatingSystem = RadarrAPI.Update.OperatingSystem;
+using OperatingSystem = LidarrAPI.Update.OperatingSystem;
 
-namespace RadarrAPI.Release.AppVeyor
+namespace LidarrAPI.Release.AppVeyor
 {
     public class AppVeyorReleaseSource : ReleaseSourceBase
     {
@@ -25,13 +24,13 @@ namespace RadarrAPI.Release.AppVeyor
 
         private static int? _lastBuildId;
 
-        private readonly DatabaseContext _database;
-        
         private readonly Config _config;
-        
-        private readonly HttpClient _httpClient;
+
+        private readonly DatabaseContext _database;
 
         private readonly HttpClient _downloadHttpClient;
+
+        private readonly HttpClient _httpClient;
 
         public AppVeyorReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
@@ -40,7 +39,8 @@ namespace RadarrAPI.Release.AppVeyor
 
             _httpClient = new HttpClient();
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _config.AppVeyorApiKey);
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _config.AppVeyorApiKey);
 
             _downloadHttpClient = new HttpClient();
         }
@@ -51,8 +51,9 @@ namespace RadarrAPI.Release.AppVeyor
             {
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
-            
-            var historyUrl = $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
+
+            var historyUrl =
+                $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
 
             var historyData = await _httpClient.GetStringAsync(historyUrl);
             var history = JsonConvert.DeserializeObject<AppVeyorProjectHistory>(historyData);
@@ -72,7 +73,8 @@ namespace RadarrAPI.Release.AppVeyor
                 if (build.PullRequestId.HasValue ||
                     build.IsTag) continue;
 
-                var buildExtendedData = await _httpClient.GetStringAsync($"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/build/{build.Version}");
+                var buildExtendedData = await _httpClient.GetStringAsync(
+                    $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/build/{build.Version}");
                 var buildExtended = JsonConvert.DeserializeObject<AppVeyorProjectLastBuild>(buildExtendedData).Build;
 
                 // Filter out incomplete builds
@@ -100,9 +102,9 @@ namespace RadarrAPI.Release.AppVeyor
                         ReleaseDate = buildExtended.Started.Value.UtcDateTime,
                         Branch = ReleaseBranch,
                         New = new List<string>
-                            {
-                                build.Message
-                            }
+                        {
+                            build.Message
+                        }
                     };
 
                     // Add extra message

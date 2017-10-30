@@ -1,8 +1,8 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using RadarrAPI.Update;
+using LidarrAPI.Update;
 
-namespace RadarrAPI.Release
+namespace LidarrAPI.Release
 {
     public abstract class ReleaseSourceBase
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace RadarrAPI.Release.AppVeyor.Responses
+namespace LidarrAPI.Release.AppVeyor.Responses
 {
     public class AppVeyorProjectBuild
     {

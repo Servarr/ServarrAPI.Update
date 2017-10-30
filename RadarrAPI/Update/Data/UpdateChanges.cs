@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace RadarrAPI.Update.Data
+namespace LidarrAPI.Update.Data
 {
     public class UpdateChanges
     {

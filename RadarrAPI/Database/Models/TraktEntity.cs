@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RadarrAPI.Database.Models
+namespace LidarrAPI.Database.Models
 {
     [Table("Trakt")]
     public class TraktEntity

@@ -1,85 +1,81 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
-using RadarrAPI.Database;
-using RadarrAPI.Update;
 
-namespace RadarrAPI.Database.Migrations
+namespace LidarrAPI.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    internal class DatabaseContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.0-rtm-22752");
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.TraktEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd();
+            modelBuilder.Entity("LidarrAPI.Database.Models.TraktEntity", b =>
+            {
+                b.Property<int>("Id")
+                    .ValueGeneratedOnAdd();
 
-                    b.Property<DateTime>("CreatedAt");
+                b.Property<DateTime>("CreatedAt");
 
-                    b.Property<Guid>("State");
+                b.Property<Guid>("State");
 
-                    b.Property<string>("Target");
+                b.Property<string>("Target");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("State");
+                b.HasIndex("State");
 
-                    b.ToTable("Trakt");
-                });
+                b.ToTable("Trakt");
+            });
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.UpdateEntity", b =>
-                {
-                    b.Property<int>("UpdateEntityId")
-                        .ValueGeneratedOnAdd();
+            modelBuilder.Entity("LidarrAPI.Database.Models.UpdateEntity", b =>
+            {
+                b.Property<int>("UpdateEntityId")
+                    .ValueGeneratedOnAdd();
 
-                    b.Property<int>("Branch");
+                b.Property<int>("Branch");
 
-                    b.Property<string>("FixedStr")
-                        .HasColumnName("Fixed");
+                b.Property<string>("FixedStr")
+                    .HasColumnName("Fixed");
 
-                    b.Property<string>("NewStr")
-                        .HasColumnName("New");
+                b.Property<string>("NewStr")
+                    .HasColumnName("New");
 
-                    b.Property<DateTime>("ReleaseDate");
+                b.Property<DateTime>("ReleaseDate");
 
-                    b.Property<string>("Version");
+                b.Property<string>("Version");
 
-                    b.HasKey("UpdateEntityId");
+                b.HasKey("UpdateEntityId");
 
-                    b.ToTable("Updates");
-                });
+                b.ToTable("Updates");
+            });
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.UpdateFileEntity", b =>
-                {
-                    b.Property<int>("UpdateEntityId");
+            modelBuilder.Entity("LidarrAPI.Database.Models.UpdateFileEntity", b =>
+            {
+                b.Property<int>("UpdateEntityId");
 
-                    b.Property<int>("OperatingSystem");
+                b.Property<int>("OperatingSystem");
 
-                    b.Property<string>("Filename");
+                b.Property<string>("Filename");
 
-                    b.Property<string>("Hash");
+                b.Property<string>("Hash");
 
-                    b.Property<string>("Url");
+                b.Property<string>("Url");
 
-                    b.HasKey("UpdateEntityId", "OperatingSystem");
+                b.HasKey("UpdateEntityId", "OperatingSystem");
 
-                    b.ToTable("UpdateFiles");
-                });
+                b.ToTable("UpdateFiles");
+            });
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.UpdateFileEntity", b =>
-                {
-                    b.HasOne("RadarrAPI.Database.Models.UpdateEntity", "Update")
-                        .WithMany("UpdateFiles")
-                        .HasForeignKey("UpdateEntityId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
+            modelBuilder.Entity("LidarrAPI.Database.Models.UpdateFileEntity", b =>
+            {
+                b.HasOne("LidarrAPI.Database.Models.UpdateEntity", "Update")
+                    .WithMany("UpdateFiles")
+                    .HasForeignKey("UpdateEntityId")
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

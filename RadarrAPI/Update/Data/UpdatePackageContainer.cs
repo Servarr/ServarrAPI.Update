@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace RadarrAPI.Update.Data
+namespace LidarrAPI.Update.Data
 {
     public class UpdatePackageContainer
     {

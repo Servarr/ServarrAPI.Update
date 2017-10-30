@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RadarrAPI.Util
+namespace LidarrAPI.Util
 {
     public static class VersionUtil
     {

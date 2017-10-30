@@ -1,5 +1,9 @@
 ﻿using System;
 using System.IO;
+using LidarrAPI.Database;
+using LidarrAPI.Release;
+using LidarrAPI.Release.AppVeyor;
+using LidarrAPI.Release.Github;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -9,21 +13,17 @@ using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using Octokit;
-using RadarrAPI.Database;
-using RadarrAPI.Release;
-using RadarrAPI.Release.AppVeyor;
-using RadarrAPI.Release.Github;
 using StatsdClient;
 using TraktApiSharp;
 
-namespace RadarrAPI
+namespace LidarrAPI
 {
     public class Startup
     {
         public Startup(IConfiguration configuration, IHostingEnvironment env)
         {
             Config = configuration;
-            ConfigRadarr = Config.GetSection("Radarr").Get<Config>();
+            ConfigLidarr = Config.GetSection("Lidarr").Get<Config>();
 
             env.ConfigureNLog("nlog.config");
             
@@ -33,14 +33,14 @@ namespace RadarrAPI
 
         public IConfiguration Config { get; }
         
-        public Config ConfigRadarr { get; }
+        public Config ConfigLidarr { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<Config>(Config.GetSection("Radarr"));
-            services.AddDbContextPool<DatabaseContext>(o => o.UseMySql(ConfigRadarr.Database));
-            services.AddSingleton(new GitHubClient(new ProductHeaderValue("RadarrAPI")));
+            services.Configure<Config>(Config.GetSection("Lidarr"));
+            services.AddDbContextPool<DatabaseContext>(o => o.UseMySql(ConfigLidarr.Database));
+            services.AddSingleton(new GitHubClient(new ProductHeaderValue("LidarrAPI")));
             
             services.AddTransient<ReleaseService>();
             services.AddTransient<GithubReleaseSource>();
@@ -63,20 +63,20 @@ namespace RadarrAPI
 
             app.UseMvc();
             
-            applicationLifetime.ApplicationStarted.Register(() => DogStatsd.Event("RadarrAPI", "RadarrAPI just started."));
-            applicationLifetime.ApplicationStopped.Register(() => DogStatsd.Event("RadarrAPI", "RadarrAPI just stopped."));
+            applicationLifetime.ApplicationStarted.Register(() => DogStatsd.Event("LidarrAPI", "LidarrAPI just started."));
+            applicationLifetime.ApplicationStopped.Register(() => DogStatsd.Event("LidarrAPI", "LidarrAPI just stopped."));
         }
 
         private void SetupDataDirectory()
         {
             // Check data path
-            if (!Path.IsPathRooted(ConfigRadarr.DataDirectory))
+            if (!Path.IsPathRooted(ConfigLidarr.DataDirectory))
             {
                 throw new Exception("DataDirectory path must be absolute.");
             }
 
             // Create
-            Directory.CreateDirectory(ConfigRadarr.DataDirectory);
+            Directory.CreateDirectory(ConfigLidarr.DataDirectory);
         }
 
         private void SetupDatadog()

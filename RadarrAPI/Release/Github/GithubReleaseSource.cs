@@ -5,32 +5,31 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using LidarrAPI.Database;
+using LidarrAPI.Database.Models;
+using LidarrAPI.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Octokit;
-using RadarrAPI.Database;
-using RadarrAPI.Database.Models;
-using RadarrAPI.Util;
-using Branch = RadarrAPI.Update.Branch;
-using OperatingSystem = RadarrAPI.Update.OperatingSystem;
+using Branch = LidarrAPI.Update.Branch;
+using OperatingSystem = LidarrAPI.Update.OperatingSystem;
 
-namespace RadarrAPI.Release.Github
+namespace LidarrAPI.Release.Github
 {
     public class GithubReleaseSource : ReleaseSourceBase
     {
-        private readonly DatabaseContext _database;
-        
         private readonly Config _config;
+        private readonly DatabaseContext _database;
 
         private readonly GitHubClient _gitHubClient;
-        
+
         private readonly HttpClient _httpClient;
 
         public GithubReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
             _database = database;
             _config = config.Value;
-            _gitHubClient = new GitHubClient(new ProductHeaderValue("RadarrAPI"));
+            _gitHubClient = new GitHubClient(new ProductHeaderValue("LidarrAPI"));
             _httpClient = new HttpClient();
         }
 
@@ -40,12 +39,12 @@ namespace RadarrAPI.Release.Github
             {
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
-            
-            var releases = await _gitHubClient.Repository.Release.GetAll("Radarr", "Radarr");
+
+            var releases = await _gitHubClient.Repository.Release.GetAll("Lidarr", "Lidarr");
             var validReleases = releases.Where(r =>
-                r.TagName.StartsWith("v") &&
-                VersionUtil.IsValid(r.TagName.Substring(1)) &&
-                r.Prerelease == (ReleaseBranch == Branch.Develop))
+                    r.TagName.StartsWith("v") &&
+                    VersionUtil.IsValid(r.TagName.Substring(1)) &&
+                    r.Prerelease == (ReleaseBranch == Branch.Develop))
                 .Reverse();
 
             foreach (var release in validReleases)
@@ -105,11 +104,11 @@ namespace RadarrAPI.Release.Github
                     {
                         operatingSystem = OperatingSystem.Windows;
                     }
-                    else if(releaseAsset.Name.Contains("linux."))
+                    else if (releaseAsset.Name.Contains("linux."))
                     {
                         operatingSystem = OperatingSystem.Linux;
                     }
-                    else if(releaseAsset.Name.Contains("osx."))
+                    else if (releaseAsset.Name.Contains("osx."))
                     {
                         operatingSystem = OperatingSystem.Osx;
                     }
@@ -120,8 +119,8 @@ namespace RadarrAPI.Release.Github
 
                     // Check if exists in database.
                     var updateFileEntity = _database.UpdateFileEntities
-                        .FirstOrDefault(x => 
-                            x.UpdateEntityId == updateEntity.UpdateEntityId && 
+                        .FirstOrDefault(x =>
+                            x.UpdateEntityId == updateEntity.UpdateEntityId &&
                             x.OperatingSystem == operatingSystem);
 
                     if (updateFileEntity != null) continue;
@@ -133,7 +132,8 @@ namespace RadarrAPI.Release.Github
                     if (!File.Exists(releaseZip))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
-                        File.WriteAllBytes(releaseZip, await _httpClient.GetByteArrayAsync(releaseAsset.BrowserDownloadUrl));
+                        File.WriteAllBytes(releaseZip,
+                            await _httpClient.GetByteArrayAsync(releaseAsset.BrowserDownloadUrl));
                     }
 
                     using (var stream = File.OpenRead(releaseZip))

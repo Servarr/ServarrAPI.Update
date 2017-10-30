@@ -1,7 +1,7 @@
-﻿namespace RadarrAPI.Update
+﻿namespace LidarrAPI.Update
 {
     /// <summary>
-    ///     Contains all update branches of Radarr
+    ///     Contains all update branches of Lidarr
     ///     which can have releases.
     /// </summary>
     public enum Branch

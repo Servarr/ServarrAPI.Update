@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
-namespace RadarrAPI.Update.Data
+namespace LidarrAPI.Update.Data
 {
     public class UpdatePackage
     {

@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace RadarrAPI.Util
+namespace LidarrAPI.Util
 {
     /// <summary>
     ///     This class is used to define compiled regexes

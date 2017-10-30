@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using RadarrAPI.Update;
+using LidarrAPI.Update;
 
-namespace RadarrAPI.Database.Models
+namespace LidarrAPI.Database.Models
 {
     [Table("UpdateFiles")]
     public class UpdateFileEntity

@@ -1,10 +1,9 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace RadarrAPI.Database.Migrations
+namespace LidarrAPI.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
     [Migration("20170113010120_Initial")]
@@ -15,7 +14,7 @@ namespace RadarrAPI.Database.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "1.1.0-rtm-22752");
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.UpdateEntity", b =>
+            modelBuilder.Entity("LidarrAPI.Database.Models.UpdateEntity", b =>
                 {
                     b.Property<int>("UpdateEntityId")
                         .ValueGeneratedOnAdd();
@@ -37,7 +36,7 @@ namespace RadarrAPI.Database.Migrations
                     b.ToTable("Updates");
                 });
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.UpdateFileEntity", b =>
+            modelBuilder.Entity("LidarrAPI.Database.Models.UpdateFileEntity", b =>
                 {
                     b.Property<int>("UpdateEntityId");
 
@@ -54,9 +53,9 @@ namespace RadarrAPI.Database.Migrations
                     b.ToTable("UpdateFiles");
                 });
 
-            modelBuilder.Entity("RadarrAPI.Database.Models.UpdateFileEntity", b =>
+            modelBuilder.Entity("LidarrAPI.Database.Models.UpdateFileEntity", b =>
                 {
-                    b.HasOne("RadarrAPI.Database.Models.UpdateEntity", "Update")
+                    b.HasOne("LidarrAPI.Database.Models.UpdateEntity", "Update")
                         .WithMany("UpdateFiles")
                         .HasForeignKey("UpdateEntityId")
                         .OnDelete(DeleteBehavior.Cascade);

@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace RadarrAPI.Extensions
+namespace LidarrAPI.Extensions
 {
     /// <summary>
     ///     This class contains <see cref="MemoryCache"/> extensions

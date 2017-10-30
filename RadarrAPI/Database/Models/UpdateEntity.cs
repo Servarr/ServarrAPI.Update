@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using LidarrAPI.Update;
 using Newtonsoft.Json;
-using RadarrAPI.Update;
 
-namespace RadarrAPI.Database.Models
+namespace LidarrAPI.Database.Models
 {
     [Table("Updates")]
     public class UpdateEntity

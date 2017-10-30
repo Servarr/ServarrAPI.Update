@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace RadarrAPI.Database.Migrations
+namespace LidarrAPI.Database.Migrations
 {
     public partial class Initial : Migration
     {

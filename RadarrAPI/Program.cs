@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace RadarrAPI
+namespace LidarrAPI
 {
     public class Program
     {
@@ -14,10 +14,7 @@ namespace RadarrAPI
         private static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
-                .ConfigureLogging(builder =>
-                {
-                    builder.ClearProviders();
-                })
+                .ConfigureLogging(builder => { builder.ClearProviders(); })
                 .Build();
     }
 }
