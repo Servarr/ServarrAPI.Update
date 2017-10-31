@@ -9,18 +9,18 @@ assembly_info:
 configuration: Release
 
 platform: Any CPU
-  
+
 environment:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
-  
+
 # Install .NET Core SDK 1.0 rc4 build 004771
 init:
   - ps: (new-object net.webclient).DownloadFile('https://go.microsoft.com/fwlink/?linkid=841686', "c:/dotnet-install.exe")
   - ps: Start-Process c:\dotnet-install.exe -ArgumentList "/install","/quiet" -Wait
-  
+
 build_script:
   - ps: dotnet restore --no-cache
-  - ps: dotnet build .\RadarrAPI\RadarrAPI.csproj -c Release
+  - ps: dotnet build .\LidarrAPI\LidarrAPI.csproj -c Release
 
 artifacts:
-  - path: '.\RadarrAPI\bin\Any CPU\Release\netcoreapp1.1\RadarrAPI.dll'
+  - path: '.\LidarrAPI\bin\Any CPU\Release\netcoreapp2.0\LidarrAPI.dll'
