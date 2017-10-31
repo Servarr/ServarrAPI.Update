@@ -123,7 +123,8 @@ namespace LidarrAPI.Release.AppVeyor
                     // Detect target operating system.
                     OperatingSystem operatingSystem;
 
-                    if (artifact.FileName.Contains("windows."))
+                    // NB: Added this because our "artifatcs incliude a Lidarr...windows.exe, which really shouldn't be added
+                    if (artifact.FileName.Contains("windows.") && artifact.FileName.ToLower().Contains(".zip"))
                     {
                         operatingSystem = OperatingSystem.Windows;
                     }
