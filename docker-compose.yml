@@ -18,6 +18,8 @@ services:
         environment:
             - DataDirectory=/data
             - Database="server=127.0.0.1;user id=root;password=${MYSQL_ROOT_PASSWORD};database=lidarrupdate;CharSet=utf8mb4"
+            - ApiKey=
+            - ASPNETCORE_URLS=http://0.0.0.0:5000
 
         volumes:
             - ./lidarrupdate-data:/data
