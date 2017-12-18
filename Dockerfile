@@ -1,12 +1,15 @@
 ﻿FROM microsoft/dotnet:2.0-sdk
 WORKDIR /app
 
-# copy csproj and restore as distinct layers
-COPY LidarrAPI/*.csproj ./
-RUN dotnet restore
-
 # copy everything else and build
 COPY LidarrAPI/* ./
-RUN dotnet publish -c Release -o out
+COPY docker-services/LidarrAPI/docker-entrypoint.sh ./
 
-ENTRYPOINT ["dotnet", "out/LidarrAPI.dll"]
+# Windows screws with Line Endings, so do this to be 100% sure
+RUN sed -i 's/\o015/\n/g' docker-entrypoint.sh
+
+# Run needed things on build
+RUN dotnet restore && dotnet publish -c Release -o out
+
+# Docker Entry
+ENTRYPOINT ["./docker-entrypoint.sh"]

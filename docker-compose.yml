@@ -1,24 +1,25 @@
 version: '3'
 services:
     mysql:
-        image: mysql
-
+        image: mysql/mysql-server
         environment:
-            - MYSQL_ROOT_PASSWORD=
-
+            - MYSQL_ROOT_PASSWORD
+            - MYSQL_DATABASE=lidarrupdate
+            - MYSQL_USER=root
+            - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            
     lidarrupdate:
         build: .
-
         ports:
-            - "5001:5000"
+            - "5000:5000"
 
         links:
             - mysql
 
         environment:
-            - DataDirectory=/data
-            - Database="server=127.0.0.1;user id=root;password=${MYSQL_ROOT_PASSWORD};database=lidarrupdate;CharSet=utf8mb4"
-            - ApiKey=
+            - Lidarr:DataDirectory=/data
+            - Lidarr:Database=server=mysql;user id=root;password=${MYSQL_ROOT_PASSWORD};database=lidarrupdate;CharSet=utf8mb4
+            - Lidarr:ApiKey=
             - ASPNETCORE_URLS=http://0.0.0.0:5000
 
         volumes:
