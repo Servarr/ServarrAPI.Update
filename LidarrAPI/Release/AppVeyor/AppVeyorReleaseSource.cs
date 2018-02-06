@@ -61,7 +61,7 @@ namespace LidarrAPI.Release.AppVeyor
             // Store here temporarily so we don't break on not processed builds.
             var lastBuild = _lastBuildId;
 
-            foreach (var build in history.Builds.Take(5).ToList()) // Only take last 5.
+            foreach (var build in history.Builds.Where(b => b.Status.ToLower().Equals("success")).Take(5).ToList()) // Only take sucessful builds, and only the last 5
             {
                 if (lastBuild.HasValue &&
                     lastBuild.Value >= build.BuildId) break;
@@ -101,6 +101,7 @@ namespace LidarrAPI.Release.AppVeyor
                         Version = buildExtended.Version,
                         ReleaseDate = buildExtended.Started.Value.UtcDateTime,
                         Branch = ReleaseBranch,
+                        Status = build.Status,
                         New = new List<string>
                         {
                             build.Message

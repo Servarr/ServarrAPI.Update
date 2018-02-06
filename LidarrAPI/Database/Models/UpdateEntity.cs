@@ -43,6 +43,11 @@ namespace LidarrAPI.Database.Models
         public Branch Branch { get; set; }
 
         /// <summary>
+        ///     The Status
+        /// </summary>
+        public string Status { get; set; }
+
+        /// <summary>
         ///     The files that belong to this update.
         /// </summary>
         public List<UpdateFileEntity> UpdateFiles { get; set; }

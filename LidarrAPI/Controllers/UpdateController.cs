@@ -63,6 +63,7 @@ namespace LidarrAPI.Controllers
                         Url = updateFile.Url,
                         Changes = updateChanges,
                         Hash = updateFile.Hash,
+                        Status = update.Status,
                         Branch = update.Branch.ToString().ToLower()
                     });
                 }

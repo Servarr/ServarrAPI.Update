@@ -26,5 +26,9 @@ namespace LidarrAPI.Update.Data
 
         public string Branch { get; set; }
 
+        /// <summary>
+        ///     The Status of the build, in theory should always be "success"
+        /// </summary>
+        public string Status { get; set; }
     }
 }
