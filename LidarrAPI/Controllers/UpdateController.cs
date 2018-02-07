@@ -96,7 +96,6 @@ namespace LidarrAPI.Controllers
                     .Where(x => x.Branch == updateBranch &&
                                 x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
                     .OrderByDescending(x => x.ReleaseDate)
-                    .Take(1)
                     .FirstOrDefault();
 
                 if (update == null)
