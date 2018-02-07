@@ -21,6 +21,9 @@ namespace LidarrAPI.Database
             {
                 builder.HasKey(k => k.UpdateEntityId);
 
+                builder.Property(entity => entity.Version).IsRequired();
+                builder.HasIndex(i => new {i.Branch, i.Version}).IsUnique();
+
                 builder.HasMany(u => u.UpdateFiles)
                     .WithOne(u => u.Update)
                     .HasForeignKey(u => u.UpdateEntityId)
