@@ -33,14 +33,16 @@ namespace LidarrAPI.Release.Github
             _httpClient = new HttpClient();
         }
 
-        protected override async Task DoFetchReleasesAsync()
+        protected override async Task<bool> DoFetchReleasesAsync()
         {
             if (ReleaseBranch == Branch.Unknown)
             {
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
-            
-            var releases = (await _gitHubClient.Repository.Release.GetAll("lidarr", "Lidarr")).ToArray();
+
+            var hasNewRelease = false;
+
+            var releases = (await _gitHubClient.Repository.Release.GetAll("Lidarr", "Lidarr")).ToArray();
             var validReleases = releases
                 .Take(3)
                 .Where(r =>
@@ -72,6 +74,9 @@ namespace LidarrAPI.Release.Github
 
                     // Start tracking this object
                     await _database.AddAsync(updateEntity);
+
+                    // Set new release to true.
+                    hasNewRelease = true;
                 }
 
                 // Parse changes
@@ -171,6 +176,8 @@ namespace LidarrAPI.Release.Github
                 // Save all changes to the database.
                 await _database.SaveChangesAsync();
             }
+
+            return hasNewRelease;
         }
     }
 }

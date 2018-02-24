@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using LidarrAPI.Database;
@@ -7,7 +8,14 @@ using LidarrAPI.Release.AppVeyor;
 using LidarrAPI.Release.Github;
 using LidarrAPI.Update;
 using Microsoft.Extensions.DependencyInjection;
+<<<<<<< HEAD:LidarrAPI/Release/ReleaseService.cs
 using NLog;
+=======
+using Microsoft.Extensions.Options;
+using RadarrAPI.Release.AppVeyor;
+using RadarrAPI.Release.Github;
+using RadarrAPI.Update;
+>>>>>>> 1065bee... Add support for triggers on release.:RadarrAPI/Release/ReleaseService.cs
 
 namespace LidarrAPI.Release
 {
@@ -19,6 +27,8 @@ namespace LidarrAPI.Release
         
         private readonly ConcurrentDictionary<Branch, Type> _releaseBranches;
 
+        private readonly Config _config;
+
         static ReleaseService()
         {
             ReleaseLocks = new ConcurrentDictionary<Branch, SemaphoreSlim>();
@@ -26,7 +36,7 @@ namespace LidarrAPI.Release
             ReleaseLocks.TryAdd(Branch.Nightly, new SemaphoreSlim(1, 1));
         }
 
-        public ReleaseService(IServiceProvider serviceProvider, DatabaseContext databaseContext)
+        public ReleaseService(IServiceProvider serviceProvider, IOptions<Config> configOptions)
         {
             _serviceProvider = serviceProvider;
 
@@ -34,6 +44,7 @@ namespace LidarrAPI.Release
             _releaseBranches.TryAdd(Branch.Develop, typeof(GithubReleaseSource));
             _releaseBranches.TryAdd(Branch.Nightly, typeof(AppVeyorReleaseSource));
 
+            _config = configOptions.Value;
         }
 
         public async Task UpdateReleasesAsync(Branch branch)
@@ -60,7 +71,11 @@ namespace LidarrAPI.Release
 
                     releaseSourceInstance.ReleaseBranch = branch;
 
-                    await releaseSourceInstance.StartFetchReleasesAsync();
+                    var hasNewRelease = await releaseSourceInstance.StartFetchReleasesAsync();
+                    if (hasNewRelease)
+                    {
+                        await CallTriggers(branch);
+                    }
                 }
             }
             finally
@@ -68,6 +83,36 @@ namespace LidarrAPI.Release
                 if (obtainedLock)
                 {
                     releaseLock.Release();
+                }
+            }
+        }
+
+        private async Task CallTriggers(Branch branch)
+        {
+            var triggers = _config.Triggers[branch];
+            if (triggers.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var trigger in triggers)
+            {
+                try
+                {
+                    var request = WebRequest.CreateHttp(trigger);
+                    request.Method = "GET";
+                    request.UserAgent = "RadarrAPI.Update/Trigger";
+                    request.KeepAlive = false;
+                    request.Timeout = 2500;
+                    request.ReadWriteTimeout = 2500;
+                    request.ContinueTimeout = 2500;
+
+                    var response = await request.GetResponseAsync();
+                    response.Dispose();
+                }
+                catch (Exception)
+                {
+                    // don't care.
                 }
             }
         }
