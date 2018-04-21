@@ -15,7 +15,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "RadarrAPI": {
+    "LidarrAPI": {
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {
