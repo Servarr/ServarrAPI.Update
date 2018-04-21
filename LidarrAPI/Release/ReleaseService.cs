@@ -8,14 +8,7 @@ using LidarrAPI.Release.AppVeyor;
 using LidarrAPI.Release.Github;
 using LidarrAPI.Update;
 using Microsoft.Extensions.DependencyInjection;
-<<<<<<< HEAD:LidarrAPI/Release/ReleaseService.cs
 using NLog;
-=======
-using Microsoft.Extensions.Options;
-using RadarrAPI.Release.AppVeyor;
-using RadarrAPI.Release.Github;
-using RadarrAPI.Update;
->>>>>>> 1065bee... Add support for triggers on release.:RadarrAPI/Release/ReleaseService.cs
 
 namespace LidarrAPI.Release
 {
