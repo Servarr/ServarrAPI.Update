@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using System;
 using System.Collections.Generic;
 
-namespace RadarrAPI.Database.Migrations
+namespace LidarrAPI.Database.Migrations
 {
     public partial class AddIntegrityCheckUpdate : Migration
     {
