@@ -52,13 +52,8 @@ namespace LidarrAPI.Release.AppVeyor
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
 
-<<<<<<< HEAD:LidarrAPI/Release/AppVeyor/AppVeyorReleaseSource.cs
-            var historyUrl =
-                $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
-=======
             var hasNewRelease = false;
             var historyUrl = $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
->>>>>>> 1065bee... Add support for triggers on release.:RadarrAPI/Release/AppVeyor/AppVeyorReleaseSource.cs
 
             var historyData = await _httpClient.GetStringAsync(historyUrl);
             var history = JsonConvert.DeserializeObject<AppVeyorProjectHistory>(historyData);
