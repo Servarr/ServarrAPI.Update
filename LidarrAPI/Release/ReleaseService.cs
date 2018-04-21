@@ -8,6 +8,7 @@ using LidarrAPI.Release.AppVeyor;
 using LidarrAPI.Release.Github;
 using LidarrAPI.Update;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NLog;
 
 namespace LidarrAPI.Release
