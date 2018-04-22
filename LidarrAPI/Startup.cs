@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using LidarrAPI.Database;
 using LidarrAPI.Release;
 using LidarrAPI.Release.AppVeyor;
 using LidarrAPI.Release.Github;
+using LidarrAPI.Update;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -37,8 +39,21 @@ namespace LidarrAPI
             SetupDataDirectory();
             SetupDatadog();
 
+            var triggersString = "Triggers\t>\n";
+            foreach(KeyValuePair<Update.Branch, List<String>> entry in ConfigLidarr.Triggers)
+            {
+                    var combined = String.Join(", ", entry.Value);
+                    triggersString += $"\t\t{entry.Key}: {combined}\n";
+            }
+
             Logger logger = LogManager.GetCurrentClassLogger();
-            logger.Debug($"Config Variables\n----------------\nDataDirectory  : {ConfigLidarr.DataDirectory}\nDatabase       : {ConfigLidarr.Database}\nAPIKey         : {ConfigLidarr.ApiKey}\nAppVeyorApiKey : {ConfigLidarr.AppVeyorApiKey}\n\n");
+            logger.Debug($@"Config Variables
+            ----------------
+            DataDirectory  : {ConfigLidarr.DataDirectory}
+            Database       : {ConfigLidarr.Database}
+            APIKey         : {ConfigLidarr.ApiKey}
+            AppVeyorApiKey : {ConfigLidarr.AppVeyorApiKey}
+            {triggersString}");
         }
 
         public IConfiguration Config { get; }

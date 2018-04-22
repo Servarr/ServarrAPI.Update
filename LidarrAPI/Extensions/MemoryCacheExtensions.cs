@@ -10,7 +10,6 @@ namespace LidarrAPI.Extensions
     /// </summary>
     public static class MemoryCacheExtensions
     {
-
         public static async Task<T> GetValueAsync<T>(this IMemoryCache cache, string cacheKey, Func<Task<T>> retrieveData, TimeSpan cacheTime)
         {
             T result;

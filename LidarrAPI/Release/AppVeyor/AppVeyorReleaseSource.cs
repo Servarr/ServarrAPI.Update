@@ -45,15 +45,15 @@ namespace LidarrAPI.Release.AppVeyor
             _downloadHttpClient = new HttpClient();
         }
 
-        protected override async Task DoFetchReleasesAsync()
+        protected override async Task<bool> DoFetchReleasesAsync()
         {
             if (ReleaseBranch == Branch.Unknown)
             {
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
 
-            var historyUrl =
-                $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
+            var hasNewRelease = false;
+            var historyUrl = $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
 
             var historyData = await _httpClient.GetStringAsync(historyUrl);
             var history = JsonConvert.DeserializeObject<AppVeyorProjectHistory>(historyData);
@@ -116,6 +116,9 @@ namespace LidarrAPI.Release.AppVeyor
 
                     // Start tracking this object
                     await _database.AddAsync(updateEntity);
+
+                    // Set new release to true.
+                    hasNewRelease = true;
                 }
 
                 // Process artifacts
@@ -192,6 +195,8 @@ namespace LidarrAPI.Release.AppVeyor
                     _lastBuildId = build.BuildId;
                 }
             }
+
+            return hasNewRelease;
         }
     }
 }

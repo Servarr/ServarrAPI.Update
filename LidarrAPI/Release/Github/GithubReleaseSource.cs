@@ -33,19 +33,22 @@ namespace LidarrAPI.Release.Github
             _httpClient = new HttpClient();
         }
 
-        protected override async Task DoFetchReleasesAsync()
+        protected override async Task<bool> DoFetchReleasesAsync()
         {
             if (ReleaseBranch == Branch.Unknown)
             {
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
 
-            var releases = await _gitHubClient.Repository.Release.GetAll("Lidarr", "Lidarr");
-            var validReleases = releases.Where(r =>
-                    r.TagName.StartsWith("v") &&
-                    VersionUtil.IsValid(r.TagName.Substring(1)) &&
-                    r.Prerelease == (ReleaseBranch == Branch.Develop))
-                .Reverse();
+            var hasNewRelease = false;
+
+            var releases = (await _gitHubClient.Repository.Release.GetAll("Lidarr", "Lidarr")).ToArray();
+            var validReleases = releases
+                .Take(3)
+                .Where(r =>
+                    r.TagName.StartsWith("v") && VersionUtil.IsValid(r.TagName.Substring(1)) &&
+                    r.Prerelease == (ReleaseBranch == Branch.Develop)
+                ).Reverse();
 
             foreach (var release in validReleases)
             {
@@ -69,32 +72,46 @@ namespace LidarrAPI.Release.Github
                         Branch = ReleaseBranch
                     };
 
-                    // Parse changes
-                    var releaseBody = release.Body;
-
-                    var features = RegexUtil.ReleaseFeaturesGroup.Match(releaseBody);
-                    if (features.Success)
-                    {
-                        foreach (Match match in RegexUtil.ReleaseChange.Matches(features.Groups["features"].Value))
-                        {
-                            if (match.Success) updateEntity.New.Add(match.Groups["text"].Value);
-                        }
-                    }
-
-                    var fixes = RegexUtil.ReleaseFixesGroup.Match(releaseBody);
-                    if (fixes.Success)
-                    {
-                        foreach (Match match in RegexUtil.ReleaseChange.Matches(fixes.Groups["fixes"].Value))
-                        {
-                            if (match.Success) updateEntity.Fixed.Add(match.Groups["text"].Value);
-                        }
-                    }
-
                     // Start tracking this object
                     await _database.AddAsync(updateEntity);
+
+                    // Set new release to true.
+                    hasNewRelease = true;
                 }
 
-                // Process releases
+                // Parse changes
+                var releaseBody = release.Body;
+                
+
+                var features = RegexUtil.ReleaseFeaturesGroup.Match(releaseBody);
+                if (features.Success)
+                {
+                    updateEntity.New.Clear();
+
+                    foreach (Match match in RegexUtil.ReleaseChange.Matches(features.Groups["features"].Value))
+                    {
+                        if (match.Success)
+                        {
+                            updateEntity.New.Add(match.Groups["text"].Value);
+                        }
+                    }
+                }
+
+                var fixes = RegexUtil.ReleaseFixesGroup.Match(releaseBody);
+                if (fixes.Success)
+                {
+                    updateEntity.Fixed.Clear();
+
+                    foreach (Match match in RegexUtil.ReleaseChange.Matches(fixes.Groups["fixes"].Value))
+                    {
+                        if (match.Success)
+                        {
+                            updateEntity.Fixed.Add(match.Groups["text"].Value);
+                        }
+                    }
+                }
+
+                // Process release files.
                 foreach (var releaseAsset in release.Assets)
                 {
                     // Detect target operating system.
@@ -159,6 +176,8 @@ namespace LidarrAPI.Release.Github
                 // Save all changes to the database.
                 await _database.SaveChangesAsync();
             }
+
+            return hasNewRelease;
         }
     }
 }
