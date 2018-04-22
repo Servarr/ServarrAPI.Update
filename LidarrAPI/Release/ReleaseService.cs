@@ -95,7 +95,7 @@ namespace LidarrAPI.Release
                 {
                     var request = WebRequest.CreateHttp(trigger);
                     request.Method = "GET";
-                    request.UserAgent = "RadarrAPI.Update/Trigger";
+                    request.UserAgent = "LidarrAPI.Update/Trigger";
                     request.KeepAlive = false;
                     request.Timeout = 2500;
                     request.ReadWriteTimeout = 2500;
