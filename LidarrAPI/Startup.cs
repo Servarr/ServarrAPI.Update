@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using LidarrAPI.Database;
+using LidarrAPI.Logging;
 using LidarrAPI.Release;
 using LidarrAPI.Release.AppVeyor;
 using LidarrAPI.Release.Github;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
+using NLog.Targets;
 using NLog.Web;
 using Octokit;
 using StatsdClient;
