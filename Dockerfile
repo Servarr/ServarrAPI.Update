@@ -1,5 +1,7 @@
-﻿FROM microsoft/dotnet:2.0-sdk
+﻿FROM microsoft/dotnet:2.1-sdk
 WORKDIR /app
+
+RUN dotnet tool install -g dotnet-aspnet-codegenerator
 
 # copy everything else and build
 COPY LidarrAPI/* ./
