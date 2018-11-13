@@ -23,4 +23,4 @@ build_script:
   - ps: dotnet build .\LidarrAPI\LidarrAPI.csproj -c Release
 
 artifacts:
-  - path: '.\LidarrAPI\bin\Any CPU\Release\netcoreapp2.0\LidarrAPI.dll'
+  - path: '.\LidarrAPI\bin\Any CPU\Release\netcoreapp2.1\LidarrAPI.dll'
