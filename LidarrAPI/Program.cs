@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog.Web;
 
 namespace LidarrAPI
 {
@@ -15,6 +16,7 @@ namespace LidarrAPI
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
                 .ConfigureLogging(builder => { builder.ClearProviders(); })
+                .UseNLog()
                 .Build();
     }
 }
