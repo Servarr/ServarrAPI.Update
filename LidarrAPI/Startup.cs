@@ -40,11 +40,19 @@ namespace LidarrAPI
             SetupDataDirectory();
             SetupDatadog();
 
-            var triggersString = "Triggers\t>\n";
-            foreach(KeyValuePair<Update.Branch, List<String>> entry in ConfigLidarr.Triggers)
+            var triggersString = "";
+            if (ConfigLidarr.Triggers != null)
             {
+                triggersString += "Triggers\t>\n";
+                foreach (KeyValuePair<Update.Branch, List<String>> entry in ConfigLidarr.Triggers)
+                {
                     var combined = String.Join(", ", entry.Value);
                     triggersString += $"\t\t{entry.Key}: {combined}\n";
+                }
+            }
+            else
+            {
+                triggersString += "No triggers registered";
             }
 
             Logger logger = LogManager.GetCurrentClassLogger();
