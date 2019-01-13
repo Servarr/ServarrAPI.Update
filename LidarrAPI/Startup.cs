@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using LidarrAPI.Database;
-using LidarrAPI.Logging;
 using LidarrAPI.Release;
 using LidarrAPI.Release.AppVeyor;
 using LidarrAPI.Release.Github;

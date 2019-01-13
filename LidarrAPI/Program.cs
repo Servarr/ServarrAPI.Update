@@ -17,6 +17,7 @@ namespace LidarrAPI
                 .UseStartup<Startup>()
                 .ConfigureLogging(builder => { builder.ClearProviders(); })
                 .UseNLog()
+                .UseSentry()
                 .Build();
     }
 }
