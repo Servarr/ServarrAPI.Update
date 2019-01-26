@@ -1,7 +1,6 @@
-branches:
-  only:
-  - master
-  - develop
+image:
+  - Visual Studio 2017
+  - Ubuntu1804
 
 assembly_info:
   patch: false
@@ -10,17 +9,22 @@ configuration: Release
 
 platform: Any CPU
 
+services:
+  - mysql
+
 environment:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  'Lidarr:Database': 'server=localhost;user id=root;password=Password12!; database=lidarrupdate;CharSet=utf8mb4'
 
 # Install .NET Core SDK 1.0 rc4 build 004771
 init:
-  - ps: (new-object net.webclient).DownloadFile('https://go.microsoft.com/fwlink/?linkid=841686', "c:/dotnet-install.exe")
-  - ps: Start-Process c:\dotnet-install.exe -ArgumentList "/install","/quiet" -Wait
+  - ps: Set-Item -path env:Lidarr:DataDirectory -value $HOME
+  - ps: gci "env:"
 
 build_script:
   - ps: dotnet restore --no-cache
   - ps: dotnet build .\LidarrAPI\LidarrAPI.csproj -c Release
+  - ps: dotnet ef database update --project LidarrAPI --startup-project LidarrAPI
 
 artifacts:
   - path: '.\LidarrAPI\bin\Any CPU\Release\netcoreapp2.1\LidarrAPI.dll'
