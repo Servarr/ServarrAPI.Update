@@ -18,7 +18,6 @@ using NLog.Targets;
 using NLog.Web;
 using Octokit;
 using StatsdClient;
-using TraktApiSharp;
 
 namespace LidarrAPI
 {
@@ -80,7 +79,6 @@ namespace LidarrAPI
             services.AddTransient<GithubReleaseSource>();
             services.AddTransient<AppVeyorReleaseSource>();
             
-            services.AddSingleton(new TraktClient(Config.GetSection("Trakt")["ClientId"], Config.GetSection("Trakt")["ClientSecret"]));
             services.AddMvc();
         }
 

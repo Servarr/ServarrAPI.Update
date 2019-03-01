@@ -13,7 +13,6 @@
     <PackageReference Include="Octokit" Version="0.29.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.1.2" />
     <PackageReference Include="Sentry.AspNetCore" Version="1.1.1" />
-    <PackageReference Include="TraktApiSharp" Version="1.0.0-alpha2" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="appsettings.json">

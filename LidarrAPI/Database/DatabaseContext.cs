@@ -13,8 +13,6 @@ namespace LidarrAPI.Database
 
         public DbSet<UpdateFileEntity> UpdateFileEntities { get; set; }
 
-        public DbSet<TraktEntity> TraktEntities { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<UpdateEntity>(builder =>
@@ -34,12 +32,6 @@ namespace LidarrAPI.Database
             modelBuilder.Entity<UpdateFileEntity>(builder =>
             {
                 builder.HasKey(k => new {k.UpdateEntityId, k.OperatingSystem});
-            });
-
-            modelBuilder.Entity<TraktEntity>(builder =>
-            {
-                builder.HasKey(k => k.Id);
-                builder.HasIndex(k => k.State);
             });
         }
     }
