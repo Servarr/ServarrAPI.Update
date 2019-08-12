@@ -8,6 +8,8 @@ services:
             - MYSQL_DATABASE=lidarrupdate
             - MYSQL_USER=root
             - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        volumes:
+          - ./my.cnf:/etc/my.cnf
             
     lidarrupdate:
         build: .
