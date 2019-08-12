@@ -2,7 +2,7 @@ version: '2'
 services:
     mysql:
         image: mysql/mysql-server
-        restart: unless-stopped
+        restart: always
         environment:
             - MYSQL_ROOT_PASSWORD
             - MYSQL_DATABASE=lidarrupdate
@@ -11,7 +11,7 @@ services:
             
     lidarrupdate:
         build: .
-        restart: unless-stopped
+        restart: always
         ports:
             - "5000:5000"
 

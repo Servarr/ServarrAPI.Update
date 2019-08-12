@@ -5,7 +5,6 @@ using LidarrAPI.Database;
 using LidarrAPI.Release;
 using LidarrAPI.Release.Azure;
 using LidarrAPI.Release.Github;
-using LidarrAPI.Update;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +13,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
-using NLog.Targets;
 using NLog.Web;
 using Octokit;
 using StatsdClient;
@@ -90,6 +88,8 @@ namespace LidarrAPI
                 app.UseDeveloperExceptionPage();
             }
 
+            UpdateDatabase(app);
+
             app.UseMvc();
             
             applicationLifetime.ApplicationStarted.Register(() => DogStatsd.Event("LidarrAPI", "LidarrAPI just started."));
@@ -122,6 +122,19 @@ namespace LidarrAPI
                 StatsdPort = port,
                 Prefix = prefix
             });
+        }
+
+        private static void UpdateDatabase(IApplicationBuilder app)
+        {
+            using (var serviceScope = app.ApplicationServices
+                   .GetRequiredService<IServiceScopeFactory>()
+                   .CreateScope())
+            {
+                using (var context = serviceScope.ServiceProvider.GetService<DatabaseContext>())
+                {
+                    context.Database.Migrate();
+                }
+            }
         }
     }
 }
