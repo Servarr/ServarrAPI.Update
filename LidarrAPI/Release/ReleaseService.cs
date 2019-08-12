@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using LidarrAPI.Database;
-using LidarrAPI.Release.AppVeyor;
+using LidarrAPI.Release.Azure;
 using LidarrAPI.Release.Github;
 using LidarrAPI.Update;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +37,7 @@ namespace LidarrAPI.Release
 
             _releaseBranches = new ConcurrentDictionary<Branch, Type>();
             _releaseBranches.TryAdd(Branch.Develop, typeof(GithubReleaseSource));
-            _releaseBranches.TryAdd(Branch.Nightly, typeof(AppVeyorReleaseSource));
+            _releaseBranches.TryAdd(Branch.Nightly, typeof(AzureReleaseSource));
 
             _config = configOptions.Value;
         }
@@ -88,7 +88,7 @@ namespace LidarrAPI.Release
             logger.Debug($"Calling triggers for {branch}");
 
             List<string> triggers;
-            if (!_config.Triggers.TryGetValue(branch, out triggers) || triggers.Count == 0)
+            if (_config.Triggers == null || !_config.Triggers.TryGetValue(branch, out triggers) || triggers.Count == 0)
             {
                 logger.Debug($"No triggers for {branch}");
                 return;

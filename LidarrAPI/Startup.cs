@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using LidarrAPI.Database;
 using LidarrAPI.Release;
-using LidarrAPI.Release.AppVeyor;
+using LidarrAPI.Release.Azure;
 using LidarrAPI.Release.Github;
 using LidarrAPI.Update;
 using Microsoft.AspNetCore.Builder;
@@ -77,8 +77,8 @@ namespace LidarrAPI
             
             services.AddTransient<ReleaseService>();
             services.AddTransient<GithubReleaseSource>();
-            services.AddTransient<AppVeyorReleaseSource>();
-            
+            services.AddTransient<AzureReleaseSource>();
+
             services.AddMvc();
         }
 

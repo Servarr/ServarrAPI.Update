@@ -1,26 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using LidarrAPI.Database;
 using LidarrAPI.Database.Models;
-using LidarrAPI.Release.AppVeyor.Responses;
+using LidarrAPI.Release.Azure.Responses;
 using LidarrAPI.Update;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using NLog;
 using OperatingSystem = LidarrAPI.Update.OperatingSystem;
 
-namespace LidarrAPI.Release.AppVeyor
+namespace LidarrAPI.Release.Azure
 {
-    public class AppVeyorReleaseSource : ReleaseSourceBase
+    public class AzureReleaseSource : ReleaseSourceBase
     {
-        private const string AccountName = "lidarr";
-        private const string ProjectSlug = "lidarr";
+        private const string AccountName = "Lidarr";
+        private const string ProjectSlug = "Lidarr";
+        private const string BranchName = "develop";
+        private const string PackageArtifactName = "Packages";
+        private static readonly Regex VersionRegex = new Regex(@".*\.(?<version>\d\.\d*\.\d*\.\d*$)",
+                                                               RegexOptions.Compiled);
 
         private static int? _lastBuildId;
 
@@ -32,7 +37,9 @@ namespace LidarrAPI.Release.AppVeyor
 
         private readonly HttpClient _httpClient;
 
-        public AppVeyorReleaseSource(DatabaseContext database, IOptions<Config> config)
+        private readonly Logger logger;
+
+        public AzureReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
             _database = database;
             _config = config.Value;
@@ -43,6 +50,8 @@ namespace LidarrAPI.Release.AppVeyor
                 new AuthenticationHeaderValue("Bearer", _config.AppVeyorApiKey);
 
             _downloadHttpClient = new HttpClient();
+
+            logger = LogManager.GetCurrentClassLogger();
         }
 
         protected override async Task<bool> DoFetchReleasesAsync()
@@ -53,66 +62,77 @@ namespace LidarrAPI.Release.AppVeyor
             }
 
             var hasNewRelease = false;
-            var historyUrl = $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/history?recordsNumber=10&branch=develop";
-
+            var historyUrl = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds?api-version=5.1&branchName=refs/heads/{BranchName}&reasonFilter=individualCI&statusFilter=completed&resultFilter=succeeded&queryOrder=startTimeDescending&$top=5";
+            logger.Trace(historyUrl);
             var historyData = await _httpClient.GetStringAsync(historyUrl);
-            var history = JsonConvert.DeserializeObject<AppVeyorProjectHistory>(historyData);
+            logger.Trace(historyData);
+
+            var history = JsonConvert.DeserializeObject<AzureList<AzureProjectBuild>>(historyData).Value;
 
             // Store here temporarily so we don't break on not processed builds.
             var lastBuild = _lastBuildId;
 
-            foreach (var build in history.Builds.Where(b => b.Status.ToLower().Equals("success")).Take(5).ToList()) // Only take sucessful builds, and only the last 5
+            // URL query has filtered to most recent 5 successful, completed builds
+            foreach (var build in history)
             {
                 if (lastBuild.HasValue &&
                     lastBuild.Value >= build.BuildId) break;
 
-                // Make sure we dont distribute;
-                // - pull requests,
-                // - unsuccesful builds,
-                // - tagged builds (duplicate).
-                if (build.PullRequestId.HasValue ||
-                    build.IsTag) continue;
+                // Extract the build version
+                var versionMatch = VersionRegex.Match(build.Version);
+                if (!versionMatch.Success)
+                {
+                    continue;
+                }
 
-                var buildExtendedData = await _httpClient.GetStringAsync(
-                    $"https://ci.appveyor.com/api/projects/{AccountName}/{ProjectSlug}/build/{build.Version}");
-                var buildExtended = JsonConvert.DeserializeObject<AppVeyorProjectLastBuild>(buildExtendedData).Build;
+                var version = versionMatch.Groups["version"].Value;
 
-                // Filter out incomplete builds
-                var buildJob = buildExtended.Jobs.FirstOrDefault();
-                if (buildJob == null ||
-                    buildJob.ArtifactsCount == 0 ||
-                    !buildExtended.Started.HasValue) continue;
+                logger.Info($"Found version: {version}");
+
+                // Get build changes
+                var changesPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/changes?api-version=5.1";
+                logger.Trace(changesPath);
+                var changesData = await _httpClient.GetStringAsync(changesPath);
+                logger.Trace(changesData);
+                var changes = JsonConvert.DeserializeObject<AzureList<AzureChange>>(changesData).Value;
 
                 // Grab artifacts
-                var artifactsPath = $"https://ci.appveyor.com/api/buildjobs/{buildJob.JobId}/artifacts";
+                var artifactsPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?api-version=5.1";
+                logger.Trace(artifactsPath);
                 var artifactsData = await _httpClient.GetStringAsync(artifactsPath);
-                var artifacts = JsonConvert.DeserializeObject<AppVeyorArtifact[]>(artifactsData);
+                logger.Trace(artifactsData);
+                var artifacts = JsonConvert.DeserializeObject<AzureList<AzureArtifact>>(artifactsData).Value;
+
+                // there should be a single artifact called 'Packages' we parse for packages
+                var artifact = artifacts.FirstOrDefault(x => x.Name == PackageArtifactName);
+                if (artifact == null)
+                {
+                    continue;
+                }
+
+                // Download the manifest
+                var manifestPath= $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?artifactName={artifact.Name}&fileId={artifact.Resource.Data}&fileName=manifest&api-version=5.1";
+                logger.Trace(manifestPath);
+                var manifestData = await _httpClient.GetStringAsync(manifestPath);
+                logger.Trace(manifestData);
+                var files = JsonConvert.DeserializeObject<AzureManifest>(manifestData).Files;
 
                 // Get an updateEntity
                 var updateEntity = _database.UpdateEntities
                     .Include(x => x.UpdateFiles)
-                    .FirstOrDefault(x => x.Version.Equals(buildExtended.Version) && x.Branch.Equals(ReleaseBranch));
+                    .FirstOrDefault(x => x.Version.Equals(version) && x.Branch.Equals(ReleaseBranch));
 
                 if (updateEntity == null)
                 {
                     // Create update object
                     updateEntity = new UpdateEntity
                     {
-                        Version = buildExtended.Version,
-                        ReleaseDate = buildExtended.Started.Value.UtcDateTime,
+                        Version = version,
+                        ReleaseDate = build.Started.Value.UtcDateTime,
                         Branch = ReleaseBranch,
                         Status = build.Status,
-                        New = new List<string>
-                        {
-                            build.Message
-                        }
+                        New = changes.Select(x => x.Message).ToList()
                     };
-
-                    // Add extra message
-                    if (!string.IsNullOrWhiteSpace(build.MessageExtended))
-                    {
-                        updateEntity.New.Add(build.MessageExtended);
-                    }
 
                     // Start tracking this object
                     await _database.AddAsync(updateEntity);
@@ -122,21 +142,21 @@ namespace LidarrAPI.Release.AppVeyor
                 }
 
                 // Process artifacts
-                foreach (var artifact in artifacts)
+                foreach (var file in files)
                 {
                     // Detect target operating system.
                     OperatingSystem operatingSystem;
 
-                    // NB: Added this because our "artifatcs incliude a Lidarr...windows.exe, which really shouldn't be added
-                    if (artifact.FileName.Contains("windows.") && artifact.FileName.ToLower().Contains(".zip"))
+                    // NB: Added this because our "artifacts incliude a Lidarr...windows.exe, which really shouldn't be added
+                    if (file.Path.Contains("windows.") && file.Path.ToLower().Contains(".zip"))
                     {
                         operatingSystem = OperatingSystem.Windows;
                     }
-                    else if (artifact.FileName.Contains("linux."))
+                    else if (file.Path.Contains("linux."))
                     {
                         operatingSystem = OperatingSystem.Linux;
                     }
-                    else if (artifact.FileName.Contains("osx."))
+                    else if (file.Path.Contains("osx."))
                     {
                         operatingSystem = OperatingSystem.Osx;
                     }
@@ -154,8 +174,8 @@ namespace LidarrAPI.Release.AppVeyor
                     if (updateFileEntity != null) continue;
 
                     // Calculate the hash of the zip file.
-                    var releaseDownloadUrl = $"{artifactsPath}/{artifact.FileName}";
-                    var releaseFileName = artifact.FileName.Split('/').Last();
+                    var releaseFileName = Path.GetFileName(file.Path);
+                    var releaseDownloadUrl = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?artifactName={artifact.Name}&fileId={file.Blob.Id}&fileName={releaseFileName}&api-version=5.1";
                     var releaseZip = Path.Combine(_config.DataDirectory, ReleaseBranch.ToString(), releaseFileName);
                     string releaseHash;
 

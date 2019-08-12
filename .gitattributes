@@ -3,6 +3,9 @@
 ###############################################################################
 * text=auto
 
+# Explicitly set bash scripts to have unix endings
+*.sh text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
