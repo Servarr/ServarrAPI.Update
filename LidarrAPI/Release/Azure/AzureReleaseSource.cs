@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using LidarrAPI.Database;
 using LidarrAPI.Database.Models;
 using LidarrAPI.Release.Azure.Responses;
@@ -24,8 +23,6 @@ namespace LidarrAPI.Release.Azure
         private const string ProjectSlug = "Lidarr";
         private const string BranchName = "develop";
         private const string PackageArtifactName = "Packages";
-        private static readonly Regex VersionRegex = new Regex(@".*\.(?<version>\d\.\d*\.\d*\.\d*$)",
-                                                               RegexOptions.Compiled);
 
         private static int? _lastBuildId;
 
@@ -79,15 +76,7 @@ namespace LidarrAPI.Release.Azure
                     lastBuild.Value >= build.BuildId) break;
 
                 // Extract the build version
-                var versionMatch = VersionRegex.Match(build.Version);
-                if (!versionMatch.Success)
-                {
-                    continue;
-                }
-
-                var version = versionMatch.Groups["version"].Value;
-
-                logger.Info($"Found version: {version}");
+                logger.Info($"Found version: {build.Version}");
 
                 // Get build changes
                 var changesPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/changes?api-version=5.1";
@@ -120,14 +109,14 @@ namespace LidarrAPI.Release.Azure
                 // Get an updateEntity
                 var updateEntity = _database.UpdateEntities
                     .Include(x => x.UpdateFiles)
-                    .FirstOrDefault(x => x.Version.Equals(version) && x.Branch.Equals(ReleaseBranch));
+                    .FirstOrDefault(x => x.Version.Equals(build.Version) && x.Branch.Equals(ReleaseBranch));
 
                 if (updateEntity == null)
                 {
                     // Create update object
                     updateEntity = new UpdateEntity
                     {
-                        Version = version,
+                        Version = build.Version,
                         ReleaseDate = build.Started.Value.UtcDateTime,
                         Branch = ReleaseBranch,
                         Status = build.Status,
