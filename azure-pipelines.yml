@@ -1,0 +1,59 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+- master
+- develop
+
+pr:
+- master
+- develop
+
+strategy:
+  matrix:
+    Linux:
+      osName: 'Linux'
+      imageName: 'ubuntu-latest'
+    Windows:
+      osName: 'Windows'
+      imageName: 'vs2017-win2016'
+    Mac:
+      osName: 'macOS'
+      imageName: 'macOS-latest'
+
+pool:
+  vmImage: $(imageName)
+
+variables:
+  buildConfiguration: 'Release'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  'Lidarr:Database': 'server=localhost;user id=root;password=root; database=lidarrupdate;CharSet=utf8mb4'
+  'Lidarr:DataDirectory': $(Build.SourcesDirectory)
+
+steps:
+- task: SonarCloudPrepare@1
+  condition: and(succeeded(), eq(variables['osName'], 'Windows'))
+  inputs:
+    SonarCloud: 'SonarCloud'
+    organization: 'lidarr'
+    scannerMode: 'MSBuild'
+    projectKey: 'lidarr_LidarrAPI.Update'
+    projectName: 'LidarrAPI.Update'
+- powershell: dotnet restore --no-cache
+  displayName: 'Restore'
+- powershell: dotnet build .\LidarrAPI\LidarrAPI.csproj -c $(buildConfiguration)
+  displayName: 'Build'
+- task: SonarCloudAnalyze@1
+  condition: and(succeeded(), eq(variables['osName'], 'Windows'))
+- task: SonarCloudPublish@1
+  condition: and(succeeded(), eq(variables['osName'], 'Windows'))
+  inputs:
+    pollingTimeoutSec: '300'
+- powershell: dotnet ef database update --project LidarrAPI --startup-project LidarrAPI
+  displayName: 'Test Database Migrations'
+  condition: and(succeeded(), eq(variables['osName'], 'Linux'))
+- publish: ./LidarrAPI/bin/Release
+  artifact: '$(imageName) Package'
+  displayName: Publish Packages
