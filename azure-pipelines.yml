@@ -34,6 +34,7 @@ variables:
 
 steps:
 - task: SonarCloudPrepare@1
+  displayName: 'Prepare SonarCloud'
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
   inputs:
     SonarCloud: 'SonarCloud'
@@ -46,8 +47,10 @@ steps:
 - powershell: dotnet build .\LidarrAPI\LidarrAPI.csproj -c $(buildConfiguration)
   displayName: 'Build'
 - task: SonarCloudAnalyze@1
+  displayName: 'SonarCloud Analysis'
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
 - task: SonarCloudPublish@1
+  displayName: 'Publish SonarCloud to Azure'
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
   inputs:
     pollingTimeoutSec: '300'
