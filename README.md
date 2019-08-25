@@ -1,5 +1,6 @@
-Lidarr Update Server [![AppVeyor](https://img.shields.io/appveyor/ci/lidarr/lidarrapi-update/master.svg?maxAge=60&style=flat-square)](https://ci.appveyor.com/project/lidarr/lidarrapi-update)
-===================
+# Lidarr Update Server 
+
+[![Build Status](https://dev.azure.com/Lidarr/Lidarr/_apis/build/status/lidarr.LidarrAPI.Update?branchName=develop)](https://dev.azure.com/Lidarr/Lidarr/_build/latest?definitionId=2&branchName=develop)
 
 This is the update API of [https://github.com/Lidarr/Lidarr](https://github.com/Lidarr/Lidarr). The API is forked from [Radarr's update server](https://github.com/Radarr/RadarrAPI.Update)
 
