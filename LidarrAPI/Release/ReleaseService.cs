@@ -27,6 +27,7 @@ namespace LidarrAPI.Release
         static ReleaseService()
         {
             ReleaseLocks = new ConcurrentDictionary<Branch, SemaphoreSlim>();
+            ReleaseLocks.TryAdd(Branch.Master, new SemaphoreSlim(1, 1));
             ReleaseLocks.TryAdd(Branch.Develop, new SemaphoreSlim(1, 1));
             ReleaseLocks.TryAdd(Branch.Nightly, new SemaphoreSlim(1, 1));
         }
@@ -36,6 +37,7 @@ namespace LidarrAPI.Release
             _serviceProvider = serviceProvider;
 
             _releaseBranches = new ConcurrentDictionary<Branch, Type>();
+            _releaseBranches.TryAdd(Branch.Master, typeof(GithubReleaseSource));
             _releaseBranches.TryAdd(Branch.Develop, typeof(GithubReleaseSource));
             _releaseBranches.TryAdd(Branch.Nightly, typeof(AzureReleaseSource));
 
