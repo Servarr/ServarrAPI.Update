@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -40,15 +41,31 @@ namespace LidarrAPI.Release.Github
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
 
+            List<string> allowedNames;
+
+            if (ReleaseBranch == Branch.Master)
+            {
+                allowedNames = new List<string> { "Lidarr.master" };
+            }
+            else if (ReleaseBranch == Branch.Develop)
+            {
+                allowedNames = new List<string> { "Lidarr.master", "Lidarr.develop" };
+            }
+            else
+            {
+                throw new ArgumentException("Branch {0} cannot be used with GitHubReleaseSource", ReleaseBranch.ToString());
+            }
+
             var hasNewRelease = false;
 
             var releases = (await _gitHubClient.Repository.Release.GetAll("Lidarr", "Lidarr")).ToArray();
             var validReleases = releases
-                .Take(3)
                 .Where(r =>
-                    r.TagName.StartsWith("v") && VersionUtil.IsValid(r.TagName.Substring(1)) &&
-                    r.Prerelease == (ReleaseBranch == Branch.Develop)
-                ).Reverse();
+                       r.Assets.Any(asset => allowedNames.Any(name => asset.Name.StartsWith(name))) &&
+                       r.TagName.StartsWith("v") && VersionUtil.IsValid(r.TagName.Substring(1))
+                    )
+                .Take(3)
+                .Reverse();
 
             foreach (var release in validReleases)
             {
