@@ -99,32 +99,25 @@ namespace LidarrAPI.Release.Github
                 // Parse changes
                 var releaseBody = release.Body;
                 
-
-                var features = RegexUtil.ReleaseFeaturesGroup.Match(releaseBody);
-                if (features.Success)
+                var features = RegexUtil.ReleaseFeaturesGroup.Matches(releaseBody);
+                if (features.Any())
                 {
                     updateEntity.New.Clear();
 
-                    foreach (Match match in RegexUtil.ReleaseChange.Matches(features.Groups["features"].Value))
+                    foreach (Match match in features)
                     {
-                        if (match.Success)
-                        {
-                            updateEntity.New.Add(match.Groups["text"].Value);
-                        }
+                        updateEntity.New.Add(match.Groups["text"].Value);
                     }
                 }
 
-                var fixes = RegexUtil.ReleaseFixesGroup.Match(releaseBody);
-                if (fixes.Success)
+                var fixes = RegexUtil.ReleaseFixesGroup.Matches(releaseBody);
+                if (fixes.Any())
                 {
                     updateEntity.Fixed.Clear();
 
-                    foreach (Match match in RegexUtil.ReleaseChange.Matches(fixes.Groups["fixes"].Value))
+                    foreach (Match match in fixes)
                     {
-                        if (match.Success)
-                        {
-                            updateEntity.Fixed.Add(match.Groups["text"].Value);
-                        }
+                        updateEntity.Fixed.Add(match.Groups["text"].Value);
                     }
                 }
 

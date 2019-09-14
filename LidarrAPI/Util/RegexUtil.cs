@@ -8,10 +8,8 @@ namespace LidarrAPI.Util
     /// </summary>
     public static class RegexUtil
     {
-        public static readonly Regex ReleaseFeaturesGroup = new Regex(@"\*\*New features:\*\*\r\n(?<features>.*?\r\n)\r\n", RegexOptions.Compiled | RegexOptions.Singleline);
+        public static readonly Regex ReleaseFeaturesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
         
-        public static readonly Regex ReleaseFixesGroup = new Regex(@"\*\*Fixes:\*\*\r\n(?<fixes>.*?\r\n)\r\n", RegexOptions.Compiled | RegexOptions.Singleline);
-        
-        public static readonly Regex ReleaseChange = new Regex(@"- (?<text>.*?)\r\n", RegexOptions.Compiled);
+        public static readonly Regex ReleaseFixesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
     }
 }
