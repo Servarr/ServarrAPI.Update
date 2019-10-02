@@ -2,10 +2,8 @@
 WORKDIR /app
 ARG config=Release
 
-# copy everything else and build
-COPY LidarrAPI/* ./
+COPY src ./
 
-# Run needed things on build
 RUN dotnet publish -c $config -o out
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-alpine
