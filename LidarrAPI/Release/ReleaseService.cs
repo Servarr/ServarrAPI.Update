@@ -4,13 +4,12 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using LidarrAPI.Database;
 using LidarrAPI.Release.Azure;
 using LidarrAPI.Release.Github;
 using LidarrAPI.Update;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NLog;
 
 namespace LidarrAPI.Release
 {
@@ -24,6 +23,8 @@ namespace LidarrAPI.Release
 
         private readonly Config _config;
 
+        private readonly ILogger<ReleaseService> _logger;
+
         static ReleaseService()
         {
             ReleaseLocks = new ConcurrentDictionary<Branch, SemaphoreSlim>();
@@ -32,7 +33,9 @@ namespace LidarrAPI.Release
             ReleaseLocks.TryAdd(Branch.Nightly, new SemaphoreSlim(1, 1));
         }
 
-        public ReleaseService(IServiceProvider serviceProvider, IOptions<Config> configOptions)
+        public ReleaseService(IServiceProvider serviceProvider,
+                              IOptions<Config> configOptions,
+                              ILogger<ReleaseService> logger)
         {
             _serviceProvider = serviceProvider;
 
@@ -42,6 +45,7 @@ namespace LidarrAPI.Release
             _releaseBranches.TryAdd(Branch.Nightly, typeof(AzureReleaseSource));
 
             _config = configOptions.Value;
+            _logger = logger;
         }
 
         public async Task UpdateReleasesAsync(Branch branch)
@@ -86,13 +90,12 @@ namespace LidarrAPI.Release
 
         private async Task CallTriggers(Branch branch)
         {
-            var logger = LogManager.GetCurrentClassLogger();
-            logger.Debug($"Calling triggers for {branch}");
+            _logger.LogDebug($"Calling triggers for {branch}");
 
             List<string> triggers;
             if (_config.Triggers == null || !_config.Triggers.TryGetValue(branch, out triggers) || triggers.Count == 0)
             {
-                logger.Debug($"No triggers for {branch}");
+                _logger.LogDebug($"No triggers for {branch}");
                 return;
             }
 
@@ -100,7 +103,7 @@ namespace LidarrAPI.Release
             {
                 try
                 {
-                    logger.Debug($"Triggering {trigger}");
+                    _logger.LogDebug($"Triggering {trigger}");
                     var request = WebRequest.CreateHttp(trigger);
                     request.Method = "GET";
                     request.UserAgent = "LidarrAPI.Update/Trigger";

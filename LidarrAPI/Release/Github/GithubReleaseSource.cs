@@ -26,6 +26,11 @@ namespace LidarrAPI.Release.Github
 
         private readonly HttpClient _httpClient;
 
+        private static readonly Regex ReleaseFeaturesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
+
+        private static readonly Regex ReleaseFixesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
+
+
         public GithubReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
             _database = database;
@@ -99,7 +104,7 @@ namespace LidarrAPI.Release.Github
                 // Parse changes
                 var releaseBody = release.Body;
                 
-                var features = RegexUtil.ReleaseFeaturesGroup.Matches(releaseBody);
+                var features = ReleaseFeaturesGroup.Matches(releaseBody);
                 if (features.Any())
                 {
                     updateEntity.New.Clear();
@@ -110,7 +115,7 @@ namespace LidarrAPI.Release.Github
                     }
                 }
 
-                var fixes = RegexUtil.ReleaseFixesGroup.Matches(releaseBody);
+                var fixes = ReleaseFixesGroup.Matches(releaseBody);
                 if (fixes.Any())
                 {
                     updateEntity.Fixed.Clear();

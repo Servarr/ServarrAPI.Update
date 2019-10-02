@@ -3,15 +3,15 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.Tasks;
 using LidarrAPI.Database;
 using LidarrAPI.Database.Models;
 using LidarrAPI.Release.Azure.Responses;
 using LidarrAPI.Update;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NLog;
-using System.Text.Json;
 
 namespace LidarrAPI.Release.Azure
 {
@@ -30,16 +30,18 @@ namespace LidarrAPI.Release.Azure
 
         private readonly HttpClient _httpClient;
 
-        private readonly Logger logger;
+        private readonly ILogger<AzureReleaseSource> _logger;
 
-        public AzureReleaseSource(DatabaseContext database, IHttpClientFactory httpClientFactory, IOptions<Config> config)
+        public AzureReleaseSource(DatabaseContext database,
+                                  IOptions<Config> config,
+                                  ILogger<AzureReleaseSource> logger)
         {
             _database = database;
             _config = config.Value;
 
             _httpClient = new HttpClient();
 
-            logger = LogManager.GetCurrentClassLogger();
+            _logger = logger;
         }
 
         protected override async Task<bool> DoFetchReleasesAsync()
@@ -51,9 +53,9 @@ namespace LidarrAPI.Release.Azure
 
             var hasNewRelease = false;
             var historyUrl = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds?api-version=5.1&branchName=refs/heads/{BranchName}&reasonFilter=individualCI&statusFilter=completed&resultFilter=succeeded&queryOrder=startTimeDescending&$top=5";
-            logger.Trace(historyUrl);
+            _logger.LogTrace(historyUrl);
             var historyData = await _httpClient.GetStringAsync(historyUrl);
-            logger.Trace(historyData);
+            _logger.LogTrace(historyData);
 
             var history = JsonSerializer.Deserialize<AzureList<AzureProjectBuild>>(historyData).Value;
 
@@ -75,20 +77,20 @@ namespace LidarrAPI.Release.Azure
                 }
 
                 // Extract the build version
-                logger.Info($"Found version: {build.Version}");
+                _logger.LogInformation($"Found version: {build.Version}");
 
                 // Get build changes
                 var changesPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/changes?api-version=5.1";
-                logger.Trace(changesPath);
+                _logger.LogTrace(changesPath);
                 var changesData = await _httpClient.GetStringAsync(changesPath);
-                logger.Trace(changesData);
+                _logger.LogTrace(changesData);
                 var changes = JsonSerializer.Deserialize<AzureList<AzureChange>>(changesData).Value;
 
                 // Grab artifacts
                 var artifactsPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?api-version=5.1";
-                logger.Trace(artifactsPath);
+                _logger.LogTrace(artifactsPath);
                 var artifactsData = await _httpClient.GetStringAsync(artifactsPath);
-                logger.Trace(artifactsData);
+                _logger.LogTrace(artifactsData);
                 var artifacts = JsonSerializer.Deserialize<AzureList<AzureArtifact>>(artifactsData).Value;
 
                 // there should be a single artifact called 'Packages' we parse for packages
@@ -100,9 +102,9 @@ namespace LidarrAPI.Release.Azure
 
                 // Download the manifest
                 var manifestPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?artifactName={artifact.Name}&fileId={artifact.Resource.Data}&fileName=manifest&api-version=5.1";
-                logger.Trace(manifestPath);
+                _logger.LogTrace(manifestPath);
                 var manifestData = await _httpClient.GetStringAsync(manifestPath);
-                logger.Trace(manifestData);
+                _logger.LogTrace(manifestData);
                 var files = JsonSerializer.Deserialize<AzureManifest>(manifestData).Files;
 
                 // Get an updateEntity

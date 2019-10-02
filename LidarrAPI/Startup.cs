@@ -12,11 +12,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NLog;
-using NLog.Extensions.Logging;
-using NLog.Web;
 using Octokit;
-using ProductHeaderValue = Octokit.ProductHeaderValue;
+using Serilog;
 
 namespace LidarrAPI
 {
@@ -34,7 +31,6 @@ namespace LidarrAPI
             Config = builder.Build();
             ConfigLidarr = Config.GetSection("Lidarr").Get<Config>();
 
-            env.ConfigureNLog("nlog.config");
             SetupDataDirectory();
 
             var triggersString = "";
@@ -52,8 +48,7 @@ namespace LidarrAPI
                 triggersString += "No triggers registered";
             }
 
-            Logger logger = LogManager.GetCurrentClassLogger();
-            logger.Debug($@"Config Variables
+            Log.Debug($@"Config Variables
             ----------------
             DataDirectory  : {ConfigLidarr.DataDirectory}
             Database       : {ConfigLidarr.Database}
@@ -84,12 +79,14 @@ namespace LidarrAPI
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            UpdateDatabase(app);
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            UpdateDatabase(app);
+            app.UseSerilogRequestLogging();
 
             app.UseRouting();
             app.UseEndpoints(endpoints => endpoints.MapControllers());

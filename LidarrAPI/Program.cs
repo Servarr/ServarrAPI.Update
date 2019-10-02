@@ -1,16 +1,41 @@
-﻿using Microsoft.AspNetCore;
+﻿using System;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using NLog.Web;
+using Serilog;
+using Serilog.Events;
 
 namespace LidarrAPI
 {
-    public class Program
+    public static class Program
     {
-        public static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            BuildWebHost(args).Run();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+#if DEBUG
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Information)
+#endif
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .CreateLogger();
+
+            try
+            {
+                Log.Information("Starting web host");
+                BuildWebHostBuilder(args).Build().Run();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Host terminated unexpectedly");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
 
         // EF Core uses this method at design time to access the DbContext
@@ -19,12 +44,11 @@ namespace LidarrAPI
             .ConfigureWebHostDefaults(
                 webBuilder => webBuilder.UseStartup<Startup>());
 
-        private static IWebHost BuildWebHost(string[] args) =>
+        private static IWebHostBuilder BuildWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .ConfigureLogging(builder => { builder.ClearProviders(); })
-                .UseNLog()
                 .UseSentry()
-                .Build();
+                .UseKestrel(x => x.AddServerHeader =  false)
+                .UseStartup<Startup>()
+                .UseSerilog();
     }
 }
