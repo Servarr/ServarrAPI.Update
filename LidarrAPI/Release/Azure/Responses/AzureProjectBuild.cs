@@ -1,24 +1,24 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace LidarrAPI.Release.Azure.Responses
 {
     public class AzureProjectBuild
     {
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int BuildId { get; set; }
 
-        [JsonProperty("buildNumber", Required = Required.Always)]
+        [JsonPropertyName("buildNumber")]
         public string Version { get; set; }
 
-        [JsonProperty("status", Required = Required.Always)]
+        [JsonPropertyName("status")]
         public string Status { get; set; }
 
-        [JsonProperty("result", Required = Required.Always)]
+        [JsonPropertyName("result")]
         public string Result { get; set; }
 
-        [JsonProperty("startTime")]
+        [JsonPropertyName("startTime")]
         public DateTimeOffset? Started { get; set; }
 
     }

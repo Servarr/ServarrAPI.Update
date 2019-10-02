@@ -1,14 +1,14 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace LidarrAPI.Release.Azure.Responses
 {
     public class AzureResource
     {
 
-        [JsonProperty("type", Required = Required.Always)]
+        [JsonPropertyName("type")]
         public string Type { get; set; }
 
-        [JsonProperty("data", Required = Required.Always)]
+        [JsonPropertyName("data")]
         public string Data { get; set; }
 
     }

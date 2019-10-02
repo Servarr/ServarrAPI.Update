@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LidarrAPI.Update;
-using Newtonsoft.Json;
 
 namespace LidarrAPI.Database.Models
 {
@@ -56,16 +57,16 @@ namespace LidarrAPI.Database.Models
         [Column("New")]
         public string NewStr
         {
-            get { return JsonConvert.SerializeObject(New); }
-            set { New = JsonConvert.DeserializeObject<List<string>>(value); }
+            get { return JsonSerializer.Serialize(New); }
+            set { New = JsonSerializer.Deserialize<List<string>>(value); }
         }
 
         [JsonIgnore]
         [Column("Fixed")]
         public string FixedStr
         {
-            get { return JsonConvert.SerializeObject(Fixed); }
-            set { Fixed = JsonConvert.DeserializeObject<List<string>>(value); }
+            get { return JsonSerializer.Serialize(Fixed); }
+            set { Fixed = JsonSerializer.Deserialize<List<string>>(value); }
         }
     }
 }

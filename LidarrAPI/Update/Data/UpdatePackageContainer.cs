@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace LidarrAPI.Update.Data
+﻿namespace LidarrAPI.Update.Data
 {
     public class UpdatePackageContainer
     {
@@ -11,8 +9,6 @@ namespace LidarrAPI.Update.Data
         /// </summary>
         public bool Available { get; set; }
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public UpdatePackage UpdatePackage { get; set; }
-
     }
 }

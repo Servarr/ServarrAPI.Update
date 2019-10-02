@@ -10,17 +10,19 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using Octokit;
+using ProductHeaderValue = Octokit.ProductHeaderValue;
 
 namespace LidarrAPI
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IHostEnvironment env)
         {
             // Loading .NetCore style of config variables from json and environment
             var builder = new ConfigurationBuilder()
@@ -69,16 +71,18 @@ namespace LidarrAPI
             services.Configure<Config>(Config.GetSection("Lidarr"));
             services.AddDbContextPool<DatabaseContext>(o => o.UseMySql(ConfigLidarr.Database));
             services.AddSingleton(new GitHubClient(new ProductHeaderValue("LidarrAPI")));
-            
+
             services.AddTransient<ReleaseService>();
             services.AddTransient<GithubReleaseSource>();
             services.AddTransient<AzureReleaseSource>();
 
-            services.AddMvc();
+            services
+                .AddControllers()
+                .AddJsonOptions(options => options.JsonSerializerOptions.IgnoreNullValues = true);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime applicationLifetime)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env, ILoggerFactory loggerFactory)
         {
             if (env.IsDevelopment())
             {
@@ -87,7 +91,8 @@ namespace LidarrAPI
 
             UpdateDatabase(app);
 
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints => endpoints.MapControllers());
         }
 
         private void SetupDataDirectory()

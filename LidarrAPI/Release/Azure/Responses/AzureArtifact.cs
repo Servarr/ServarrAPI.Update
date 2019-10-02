@@ -1,17 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace LidarrAPI.Release.Azure.Responses
 {
     public class AzureArtifact
     {
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
-        [JsonProperty("name", Required = Required.Always)]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("resource", Required = Required.Always)]
+        [JsonPropertyName("resource")]
         public AzureResource Resource { get; set; }
 
     }

@@ -6,7 +6,7 @@ This is the update API of [https://github.com/Lidarr/Lidarr](https://github.com/
 
 ## Development
 
-If you want to work on **LidarrAPI.Update**, make sure you have [.NET Core 2.1 SDK](https://www.microsoft.com/net/download/core) installed and [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/).
+If you want to work on **LidarrAPI.Update**, make sure you have [.NET Core 3.0 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0) installed and [Visual Studio 2019 v16.3](https://www.visualstudio.com/vs).
 
 ## Using Docker
 

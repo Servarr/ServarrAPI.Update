@@ -1,28 +1,28 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace LidarrAPI.Release.Azure.Responses
 {
     public class AzureManifest
     {
 
-        [JsonProperty("items", Required = Required.Always)]
+        [JsonPropertyName("items")]
         public List<AzureFile> Files { get; set; }
 
     }
 
     public class AzureFile
     {
-        [JsonProperty("path", Required = Required.Always)]
+        [JsonPropertyName("path")]
         public string Path { get; set; }
 
-        [JsonProperty("blob", Required = Required.Always)]
+        [JsonPropertyName("blob")]
         public AzureBlob Blob { get; set; }
     }
 
     public class AzureBlob
     {
-        [JsonProperty("id", Required = Required.Always)]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
     }
 }

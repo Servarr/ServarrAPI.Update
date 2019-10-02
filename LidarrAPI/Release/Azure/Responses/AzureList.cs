@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace LidarrAPI.Release.Azure.Responses
 {
     public class AzureList<T> where T : class
     {
 
-        [JsonProperty("count")]
+        [JsonPropertyName("count")]
         public int Count { get; set; }
         
-        [JsonProperty("value")]
+        [JsonPropertyName("value")]
         public List<T> Value { get; set; }
 
     }

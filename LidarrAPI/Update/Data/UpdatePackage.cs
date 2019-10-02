@@ -1,6 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 
 namespace LidarrAPI.Update.Data
 {
@@ -9,14 +7,12 @@ namespace LidarrAPI.Update.Data
         
         public string Version { get; set; }
 
-        [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime ReleaseDate { get; set; }
 
         public string Filename { get; set; }
 
         public string Url { get; set; }
 
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public UpdateChanges Changes { get; set; }
 
         /// <summary>

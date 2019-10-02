@@ -10,9 +10,8 @@ using LidarrAPI.Release.Azure.Responses;
 using LidarrAPI.Update;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using NLog;
-using OperatingSystem = LidarrAPI.Update.OperatingSystem;
+using System.Text.Json;
 
 namespace LidarrAPI.Release.Azure
 {
@@ -56,7 +55,7 @@ namespace LidarrAPI.Release.Azure
             var historyData = await _httpClient.GetStringAsync(historyUrl);
             logger.Trace(historyData);
 
-            var history = JsonConvert.DeserializeObject<AzureList<AzureProjectBuild>>(historyData).Value;
+            var history = JsonSerializer.Deserialize<AzureList<AzureProjectBuild>>(historyData).Value;
 
             // Store here temporarily so we don't break on not processed builds.
             var lastBuild = _lastBuildId;
@@ -83,14 +82,14 @@ namespace LidarrAPI.Release.Azure
                 logger.Trace(changesPath);
                 var changesData = await _httpClient.GetStringAsync(changesPath);
                 logger.Trace(changesData);
-                var changes = JsonConvert.DeserializeObject<AzureList<AzureChange>>(changesData).Value;
+                var changes = JsonSerializer.Deserialize<AzureList<AzureChange>>(changesData).Value;
 
                 // Grab artifacts
                 var artifactsPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?api-version=5.1";
                 logger.Trace(artifactsPath);
                 var artifactsData = await _httpClient.GetStringAsync(artifactsPath);
                 logger.Trace(artifactsData);
-                var artifacts = JsonConvert.DeserializeObject<AzureList<AzureArtifact>>(artifactsData).Value;
+                var artifacts = JsonSerializer.Deserialize<AzureList<AzureArtifact>>(artifactsData).Value;
 
                 // there should be a single artifact called 'Packages' we parse for packages
                 var artifact = artifacts.FirstOrDefault(x => x.Name == PackageArtifactName);
@@ -104,7 +103,7 @@ namespace LidarrAPI.Release.Azure
                 logger.Trace(manifestPath);
                 var manifestData = await _httpClient.GetStringAsync(manifestPath);
                 logger.Trace(manifestData);
-                var files = JsonConvert.DeserializeObject<AzureManifest>(manifestData).Files;
+                var files = JsonSerializer.Deserialize<AzureManifest>(manifestData).Files;
 
                 // Get an updateEntity
                 var updateEntity = _database.UpdateEntities
