@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using LidarrAPI.Database;
 using LidarrAPI.Database.Models;
@@ -31,6 +32,10 @@ namespace LidarrAPI.Release.Azure
         private readonly HttpClient _httpClient;
 
         private readonly ILogger<AzureReleaseSource> _logger;
+
+        private static readonly Regex ReleaseFeaturesGroup = new Regex(@"^New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
+
+        private static readonly Regex ReleaseFixesGroup = new Regex(@"^Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
 
         public AzureReleaseSource(DatabaseContext database,
                                   IOptions<Config> config,
@@ -120,8 +125,7 @@ namespace LidarrAPI.Release.Azure
                         Version = build.Version,
                         ReleaseDate = build.Started.Value.UtcDateTime,
                         Branch = ReleaseBranch,
-                        Status = build.Status,
-                        New = changes.Select(x => x.Message).ToList()
+                        Status = build.Status
                     };
 
                     // Start tracking this object
@@ -129,6 +133,29 @@ namespace LidarrAPI.Release.Azure
 
                     // Set new release to true.
                     hasNewRelease = true;
+                }
+
+                // Parse changes
+                var features = changes.Select(x => ReleaseFeaturesGroup.Match(x.Message));
+                if (features.Any(x => x.Success))
+                {
+                    updateEntity.New.Clear();
+
+                    foreach (Match match in features.Where(x => x.Success))
+                    {
+                        updateEntity.New.Add(match.Groups["text"].Value);
+                    }
+                }
+
+                var fixes = changes.Select(x => ReleaseFixesGroup.Match(x.Message));
+                if (fixes.Any(x => x.Success))
+                {
+                    updateEntity.Fixed.Clear();
+
+                    foreach (Match match in fixes.Where(x => x.Success))
+                    {
+                        updateEntity.Fixed.Add(match.Groups["text"].Value);
+                    }
                 }
 
                 // Process artifacts
