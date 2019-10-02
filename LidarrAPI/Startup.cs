@@ -56,7 +56,6 @@ namespace LidarrAPI
             DataDirectory  : {ConfigLidarr.DataDirectory}
             Database       : {ConfigLidarr.Database}
             APIKey         : {ConfigLidarr.ApiKey}
-            AppVeyorApiKey : {ConfigLidarr.AppVeyorApiKey}
             {triggersString}");
         }
 
