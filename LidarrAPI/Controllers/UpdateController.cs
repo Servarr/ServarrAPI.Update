@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using LidarrAPI.Database;
+using LidarrAPI.Database.Models;
 using LidarrAPI.Update;
 using LidarrAPI.Update.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Architecture = System.Runtime.InteropServices.Architecture;
 using OperatingSystem = LidarrAPI.Update.OperatingSystem;
 
 namespace LidarrAPI.Controllers
@@ -69,7 +72,10 @@ namespace LidarrAPI.Controllers
         [Route("{branch}")]
         [HttpGet]
         public object GetUpdates([FromRoute(Name = "branch")] Branch updateBranch,
-            [FromQuery(Name = "version")] string urlVersion, [FromQuery(Name = "os")] OperatingSystem operatingSystem)
+                                 [FromQuery(Name = "version")] string urlVersion,
+                                 [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                 [FromQuery(Name = "runtime")] Runtime runtime,
+                                 [FromQuery(Name = "arch")] Architecture arch)
         {
             // Check given version
             if (!Version.TryParse(urlVersion, out Version version))
@@ -80,11 +86,33 @@ namespace LidarrAPI.Controllers
                 };
             }
 
+            // Mono and Dotnet are equivalent for our purposes
+            if (runtime == Runtime.Mono)
+            {
+                runtime = Runtime.DotNet;
+            }
+
+            // If runtime is DotNet then default arch to x64
+            if (runtime == Runtime.DotNet)
+            {
+                arch = Architecture.X64;
+            }
+
+            Expression<Func<UpdateFileEntity, bool>> predicate;
+            if (operatingSystem == OperatingSystem.Linux)
+            {
+                predicate = x => x.OperatingSystem == operatingSystem && x.Architecture == arch && x.Runtime == runtime;
+            }
+            else
+            {
+                predicate = x => x.OperatingSystem == operatingSystem;
+            }
+
             // Grab latest update based on branch and operatingsystem
             var update = _database.UpdateEntities
                 .Include(x => x.UpdateFiles)
                 .Where(x => x.Branch == updateBranch &&
-                       x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
+                       x.UpdateFiles.AsQueryable().Any(predicate))
                 .OrderByDescending(x => x.ReleaseDate)
                 .FirstOrDefault();
 
@@ -97,7 +125,7 @@ namespace LidarrAPI.Controllers
             }
 
             // Check if update file is present
-            var updateFile = update.UpdateFiles.FirstOrDefault(u => u.OperatingSystem == operatingSystem);
+            var updateFile = update.UpdateFiles.FirstOrDefault(predicate.Compile());
             if (updateFile == null)
             {
                 return new
@@ -139,7 +167,8 @@ namespace LidarrAPI.Controllers
                     Url = updateFile.Url,
                     Changes = updateChanges,
                     Hash = updateFile.Hash,
-                    Branch = update.Branch.ToString().ToLower()
+                    Branch = update.Branch.ToString().ToLower(),
+                    Runtime = updateFile.Runtime.ToString().ToLower()
                 }
             };
         }

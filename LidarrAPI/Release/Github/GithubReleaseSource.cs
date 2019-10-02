@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Octokit;
 using Branch = LidarrAPI.Update.Branch;
 using OperatingSystem = LidarrAPI.Update.OperatingSystem;
+using Runtime = LidarrAPI.Update.Runtime;
 
 namespace LidarrAPI.Release.Github
 {
@@ -129,31 +130,22 @@ namespace LidarrAPI.Release.Github
                 // Process release files.
                 foreach (var releaseAsset in release.Assets)
                 {
-                    // Detect target operating system.
-                    OperatingSystem operatingSystem;
-
-                    if (releaseAsset.Name.Contains("windows."))
-                    {
-                        operatingSystem = OperatingSystem.Windows;
-                    }
-                    else if (releaseAsset.Name.Contains("linux."))
-                    {
-                        operatingSystem = OperatingSystem.Linux;
-                    }
-                    else if (releaseAsset.Name.Contains("osx."))
-                    {
-                        operatingSystem = OperatingSystem.Osx;
-                    }
-                    else
+                    var operatingSystem = Parser.ParseOS(releaseAsset.Name);
+                    if (!operatingSystem.HasValue)
                     {
                         continue;
                     }
+
+                    var runtime = Parser.ParseRuntime(releaseAsset.Name);
+                    var arch = Parser.ParseArchitecture(releaseAsset.Name);
 
                     // Check if exists in database.
                     var updateFileEntity = _database.UpdateFileEntities
                         .FirstOrDefault(x =>
                             x.UpdateEntityId == updateEntity.UpdateEntityId &&
-                            x.OperatingSystem == operatingSystem);
+                            x.OperatingSystem == operatingSystem.Value &&
+                            x.Runtime == runtime &&
+                            x.Architecture == arch);
 
                     if (updateFileEntity != null) continue;
 
@@ -185,7 +177,9 @@ namespace LidarrAPI.Release.Github
                     // Add to database.
                     updateEntity.UpdateFiles.Add(new UpdateFileEntity
                     {
-                        OperatingSystem = operatingSystem,
+                        OperatingSystem = operatingSystem.Value,
+                        Architecture = arch,
+                        Runtime = runtime,
                         Filename = releaseAsset.Name,
                         Url = releaseAsset.BrowserDownloadUrl,
                         Hash = releaseHash

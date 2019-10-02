@@ -22,6 +22,16 @@ namespace LidarrAPI.Database.Models
         public OperatingSystem OperatingSystem { get; set; }
 
         /// <summary>
+        ///     The <see cref="Runtime"/> this file requires.
+        /// </summary>
+        public Runtime Runtime { get; set; }
+
+        /// <summary>
+        ///     The <see cref="Architecture"/> this file requires.
+        /// </summary>
+        public System.Runtime.InteropServices.Architecture Architecture { get; set; }
+
+        /// <summary>
         ///     The zip file name.
         /// </summary>
         public string Filename { get; set; }

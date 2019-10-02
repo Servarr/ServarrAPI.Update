@@ -1,13 +1,12 @@
 ﻿FROM mcr.microsoft.com/dotnet/core/sdk:3.0-alpine AS sdk
 WORKDIR /app
-
-RUN dotnet tool install -g dotnet-aspnet-codegenerator
+ARG config=Release
 
 # copy everything else and build
 COPY LidarrAPI/* ./
 
 # Run needed things on build
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c $config -o out
 
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-alpine
 WORKDIR /app

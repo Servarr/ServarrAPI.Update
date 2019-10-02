@@ -10,6 +10,7 @@ using LidarrAPI.Database;
 using LidarrAPI.Database.Models;
 using LidarrAPI.Release.Azure.Responses;
 using LidarrAPI.Update;
+using LidarrAPI.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,7 +21,6 @@ namespace LidarrAPI.Release.Azure
     {
         private const string AccountName = "Lidarr";
         private const string ProjectSlug = "Lidarr";
-        private const string BranchName = "develop";
         private const string PackageArtifactName = "Packages";
 
         private static int? _lastBuildId;
@@ -56,8 +56,22 @@ namespace LidarrAPI.Release.Azure
                 throw new ArgumentException("ReleaseBranch must not be unknown when fetching releases.");
             }
 
+            string branchName;
+            if (ReleaseBranch == Branch.Nightly)
+            {
+                branchName = "develop";
+            }
+            else if (ReleaseBranch == Branch.NetCore)
+            {
+                branchName = "dotnet-core-2";
+            }
+            else
+            {
+                throw new ArgumentException($"ReleaseBranch {ReleaseBranch} not supported for Azure");
+            }
+
             var hasNewRelease = false;
-            var historyUrl = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds?api-version=5.1&branchName=refs/heads/{BranchName}&reasonFilter=individualCI&statusFilter=completed&resultFilter=succeeded&queryOrder=startTimeDescending&$top=5";
+            var historyUrl = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds?api-version=5.1&branchName=refs/heads/{branchName}&reasonFilter=individualCI&statusFilter=completed&resultFilter=succeeded&queryOrder=startTimeDescending&$top=5";
             _logger.LogTrace(historyUrl);
             var historyData = await _httpClient.GetStringAsync(historyUrl);
             _logger.LogTrace(historyData);
@@ -161,32 +175,31 @@ namespace LidarrAPI.Release.Azure
                 // Process artifacts
                 foreach (var file in files)
                 {
-                    // Detect target operating system.
-                    OperatingSystem operatingSystem;
+                    _logger.LogDebug("Processing {0}", file.Path);
 
-                    // NB: Added this because our "artifacts incliude a Lidarr...windows.exe, which really shouldn't be added
-                    if (file.Path.Contains("windows.") && file.Path.ToLower().Contains(".zip"))
-                    {
-                        operatingSystem = OperatingSystem.Windows;
-                    }
-                    else if (file.Path.Contains("linux."))
-                    {
-                        operatingSystem = OperatingSystem.Linux;
-                    }
-                    else if (file.Path.Contains("osx."))
-                    {
-                        operatingSystem = OperatingSystem.Osx;
-                    }
-                    else
+                    // Detect target operating system.
+                    var operatingSystem = Parser.ParseOS(file.Path);
+                    if (!operatingSystem.HasValue)
                     {
                         continue;
                     }
+
+                    _logger.LogDebug("Got os {0}", operatingSystem);
+
+                    // Detect runtime / arch
+                    var runtime = Parser.ParseRuntime(file.Path);
+                    _logger.LogDebug("Got runtime {0}", runtime);
+
+                    var arch = Parser.ParseArchitecture(file.Path);
+                    _logger.LogDebug("Got arch {0}", arch);
 
                     // Check if exists in database.
                     var updateFileEntity = _database.UpdateFileEntities
                         .FirstOrDefault(x =>
                             x.UpdateEntityId == updateEntity.UpdateEntityId &&
-                            x.OperatingSystem == operatingSystem);
+                            x.OperatingSystem == operatingSystem.Value &&
+                            x.Runtime == runtime &&
+                            x.Architecture == arch);
 
                     if (updateFileEntity != null) continue;
 
@@ -220,7 +233,9 @@ namespace LidarrAPI.Release.Azure
                     // Add to database.
                     updateEntity.UpdateFiles.Add(new UpdateFileEntity
                     {
-                        OperatingSystem = operatingSystem,
+                        OperatingSystem = operatingSystem.Value,
+                        Architecture = arch,
+                        Runtime = runtime,
                         Filename = releaseFileName,
                         Url = releaseDownloadUrl,
                         Hash = releaseHash

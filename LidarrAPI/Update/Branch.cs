@@ -9,6 +9,7 @@
         Unknown = 0,
         Develop = 1,
         Nightly = 2,
-        Master = 3
+        Master = 3,
+        NetCore = 4
     }
 }

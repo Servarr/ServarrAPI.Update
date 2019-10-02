@@ -31,7 +31,7 @@ namespace LidarrAPI.Database
             
             modelBuilder.Entity<UpdateFileEntity>(builder =>
             {
-                builder.HasKey(k => new {k.UpdateEntityId, k.OperatingSystem});
+                builder.HasKey(k => new {k.UpdateEntityId, k.OperatingSystem, k.Architecture, k.Runtime});
             });
         }
     }

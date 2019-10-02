@@ -31,6 +31,7 @@ namespace LidarrAPI.Release
             ReleaseLocks.TryAdd(Branch.Master, new SemaphoreSlim(1, 1));
             ReleaseLocks.TryAdd(Branch.Develop, new SemaphoreSlim(1, 1));
             ReleaseLocks.TryAdd(Branch.Nightly, new SemaphoreSlim(1, 1));
+            ReleaseLocks.TryAdd(Branch.NetCore, new SemaphoreSlim(1, 1));
         }
 
         public ReleaseService(IServiceProvider serviceProvider,
@@ -43,6 +44,7 @@ namespace LidarrAPI.Release
             _releaseBranches.TryAdd(Branch.Master, typeof(GithubReleaseSource));
             _releaseBranches.TryAdd(Branch.Develop, typeof(GithubReleaseSource));
             _releaseBranches.TryAdd(Branch.Nightly, typeof(AzureReleaseSource));
+            _releaseBranches.TryAdd(Branch.NetCore, typeof(AzureReleaseSource));
 
             _config = configOptions.Value;
             _logger = logger;
