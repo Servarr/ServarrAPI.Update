@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using LidarrAPI.Database;
@@ -30,23 +29,16 @@ namespace LidarrAPI.Release.Azure
 
         private readonly DatabaseContext _database;
 
-        private readonly HttpClient _downloadHttpClient;
-
         private readonly HttpClient _httpClient;
 
         private readonly Logger logger;
 
-        public AzureReleaseSource(DatabaseContext database, IOptions<Config> config)
+        public AzureReleaseSource(DatabaseContext database, IHttpClientFactory httpClientFactory, IOptions<Config> config)
         {
             _database = database;
             _config = config.Value;
 
             _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _config.AppVeyorApiKey);
-
-            _downloadHttpClient = new HttpClient();
 
             logger = LogManager.GetCurrentClassLogger();
         }
@@ -72,8 +64,16 @@ namespace LidarrAPI.Release.Azure
             // URL query has filtered to most recent 5 successful, completed builds
             foreach (var build in history)
             {
-                if (lastBuild.HasValue &&
-                    lastBuild.Value >= build.BuildId) break;
+                if (lastBuild.HasValue && lastBuild.Value >= build.BuildId)
+                {
+                    break;
+                }
+
+                // Found a build that hasn't started yet..?
+                if (!build.Started.HasValue)
+                {
+                    break;
+                }
 
                 // Extract the build version
                 logger.Info($"Found version: {build.Version}");
@@ -100,7 +100,7 @@ namespace LidarrAPI.Release.Azure
                 }
 
                 // Download the manifest
-                var manifestPath= $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?artifactName={artifact.Name}&fileId={artifact.Resource.Data}&fileName=manifest&api-version=5.1";
+                var manifestPath = $"https://dev.azure.com/{AccountName}/{ProjectSlug}/_apis/build/builds/{build.BuildId}/artifacts?artifactName={artifact.Name}&fileId={artifact.Resource.Data}&fileName=manifest&api-version=5.1";
                 logger.Trace(manifestPath);
                 var manifestData = await _httpClient.GetStringAsync(manifestPath);
                 logger.Trace(manifestData);
@@ -171,7 +171,12 @@ namespace LidarrAPI.Release.Azure
                     if (!File.Exists(releaseZip))
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
-                        File.WriteAllBytes(releaseZip, await _downloadHttpClient.GetByteArrayAsync(releaseDownloadUrl));
+
+                        using (var fileStream = File.OpenWrite(releaseZip))
+                        using (var artifactStream = await _httpClient.GetStreamAsync(releaseDownloadUrl))
+                        {
+                            await artifactStream.CopyToAsync(fileStream);
+                        }
                     }
 
                     using (var stream = File.OpenRead(releaseZip))
