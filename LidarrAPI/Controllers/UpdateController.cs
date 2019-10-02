@@ -6,7 +6,6 @@ using LidarrAPI.Update;
 using LidarrAPI.Update.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using StatsdClient;
 using OperatingSystem = LidarrAPI.Update.OperatingSystem;
 
 namespace LidarrAPI.Controllers
@@ -26,36 +25,32 @@ namespace LidarrAPI.Controllers
         public object GetChanges([FromRoute(Name = "branch")] Branch updateBranch,
             [FromQuery(Name = "version")] string urlVersion, [FromQuery(Name = "os")] OperatingSystem operatingSystem)
         {
-            using (DogStatsd.StartTimer("controller.update.get_changes.time"))
+            var updates = _database.UpdateEntities
+                .Include(x => x.UpdateFiles)
+                .Where(x => x.Branch == updateBranch &&
+                       x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
+                .OrderByDescending(x => x.ReleaseDate)
+                .Take(5);
+
+            var response = new List<UpdatePackage>();
+
+            foreach (var update in updates)
             {
-                DogStatsd.Increment("controller.update.get_changes.count");
+                var updateFile = update.UpdateFiles.FirstOrDefault(u => u.OperatingSystem == operatingSystem);
+                if (updateFile == null) continue;
 
-                var updates = _database.UpdateEntities
-                    .Include(x => x.UpdateFiles)
-                    .Where(x => x.Branch == updateBranch &&
-                                x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
-                    .OrderByDescending(x => x.ReleaseDate)
-                    .Take(5);
+                UpdateChanges updateChanges = null;
 
-                var response = new List<UpdatePackage>();
-
-                foreach (var update in updates)
+                if (update.New.Count != 0 || update.Fixed.Count != 0)
                 {
-                    var updateFile = update.UpdateFiles.FirstOrDefault(u => u.OperatingSystem == operatingSystem);
-                    if (updateFile == null) continue;
-
-                    UpdateChanges updateChanges = null;
-
-                    if (update.New.Count != 0 || update.Fixed.Count != 0)
+                    updateChanges = new UpdateChanges
                     {
-                        updateChanges = new UpdateChanges
-                        {
-                            New = update.New,
-                            Fixed = update.Fixed
-                        };
-                    }
+                        New = update.New,
+                        Fixed = update.Fixed
+                    };
+                }
 
-                    response.Add(new UpdatePackage
+                response.Add(new UpdatePackage
                     {
                         Version = update.Version,
                         ReleaseDate = update.ReleaseDate,
@@ -66,10 +61,9 @@ namespace LidarrAPI.Controllers
                         Status = update.Status,
                         Branch = update.Branch.ToString().ToLower()
                     });
-                }
-
-                return response;
             }
+
+            return response;
         }
 
         [Route("{branch}")]
@@ -86,73 +80,68 @@ namespace LidarrAPI.Controllers
                 };
             }
 
-            using (DogStatsd.StartTimer("controller.update.get_updates.time"))
+            // Grab latest update based on branch and operatingsystem
+            var update = _database.UpdateEntities
+                .Include(x => x.UpdateFiles)
+                .Where(x => x.Branch == updateBranch &&
+                       x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
+                .OrderByDescending(x => x.ReleaseDate)
+                .FirstOrDefault();
+
+            if (update == null)
             {
-                DogStatsd.Increment("controller.update.get_updates.count");
-
-                // Grab latest update based on branch and operatingsystem
-                var update = _database.UpdateEntities
-                    .Include(x => x.UpdateFiles)
-                    .Where(x => x.Branch == updateBranch &&
-                                x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
-                    .OrderByDescending(x => x.ReleaseDate)
-                    .FirstOrDefault();
-
-                if (update == null)
-                {
-                    return new
+                return new
                     {
                         ErrorMessage = "Latest update not found."
                     };
-                }
+            }
 
-                // Check if update file is present
-                var updateFile = update.UpdateFiles.FirstOrDefault(u => u.OperatingSystem == operatingSystem);
-                if (updateFile == null)
-                {
-                    return new
+            // Check if update file is present
+            var updateFile = update.UpdateFiles.FirstOrDefault(u => u.OperatingSystem == operatingSystem);
+            if (updateFile == null)
+            {
+                return new
                     {
                         ErrorMessage = "Latest update file not found."
                     };
-                }
+            }
 
-                // Compare given version and update version
-                var updateVersion = new Version(update.Version);
-                if (updateVersion.CompareTo(version) <= 0)
-                {
-                    return new UpdatePackageContainer
-                    {
-                        Available = false
-                    };
-                }
-
-                // Get the update changes
-                UpdateChanges updateChanges = null;
-
-                if (update.New.Count != 0 || update.Fixed.Count != 0)
-                {
-                    updateChanges = new UpdateChanges
-                    {
-                        New = update.New,
-                        Fixed = update.Fixed
-                    };
-                }
-
+            // Compare given version and update version
+            var updateVersion = new Version(update.Version);
+            if (updateVersion.CompareTo(version) <= 0)
+            {
                 return new UpdatePackageContainer
                 {
-                    Available = true,
-                    UpdatePackage = new UpdatePackage
-                    {
-                        Version = update.Version,
-                        ReleaseDate = update.ReleaseDate,
-                        Filename = updateFile.Filename,
-                        Url = updateFile.Url,
-                        Changes = updateChanges,
-                        Hash = updateFile.Hash,
-                        Branch = update.Branch.ToString().ToLower()
-                    }
+                    Available = false
                 };
             }
+
+            // Get the update changes
+            UpdateChanges updateChanges = null;
+
+            if (update.New.Count != 0 || update.Fixed.Count != 0)
+            {
+                updateChanges = new UpdateChanges
+                {
+                    New = update.New,
+                    Fixed = update.Fixed
+                };
+            }
+
+            return new UpdatePackageContainer
+            {
+                Available = true,
+                UpdatePackage = new UpdatePackage
+                {
+                    Version = update.Version,
+                    ReleaseDate = update.ReleaseDate,
+                    Filename = updateFile.Filename,
+                    Url = updateFile.Url,
+                    Changes = updateChanges,
+                    Hash = updateFile.Hash,
+                    Branch = update.Branch.ToString().ToLower()
+                }
+            };
         }
     }
 }

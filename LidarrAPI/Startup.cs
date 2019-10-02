@@ -15,7 +15,6 @@ using NLog;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using Octokit;
-using StatsdClient;
 
 namespace LidarrAPI
 {
@@ -35,7 +34,6 @@ namespace LidarrAPI
 
             env.ConfigureNLog("nlog.config");
             SetupDataDirectory();
-            SetupDatadog();
 
             var triggersString = "";
             if (ConfigLidarr.Triggers != null)
@@ -91,9 +89,6 @@ namespace LidarrAPI
             UpdateDatabase(app);
 
             app.UseMvc();
-            
-            applicationLifetime.ApplicationStarted.Register(() => DogStatsd.Event("LidarrAPI", "LidarrAPI just started."));
-            applicationLifetime.ApplicationStopped.Register(() => DogStatsd.Event("LidarrAPI", "LidarrAPI just stopped."));
         }
 
         private void SetupDataDirectory()
@@ -106,22 +101,6 @@ namespace LidarrAPI
 
             // Create
             Directory.CreateDirectory(ConfigLidarr.DataDirectory);
-        }
-
-        private void SetupDatadog()
-        {
-            var server = Config.GetSection("DataDog")["Server"];
-            var port = Config.GetSection("DataDog").GetValue<int>("Port");
-            var prefix = Config.GetSection("DataDog")["Prefix"];
-
-            if (string.IsNullOrWhiteSpace(server) || port == 0) return;
-
-            DogStatsd.Configure(new StatsdConfig
-            {
-                StatsdServerName = server,
-                StatsdPort = port,
-                Prefix = prefix
-            });
         }
 
         private static void UpdateDatabase(IApplicationBuilder app)
