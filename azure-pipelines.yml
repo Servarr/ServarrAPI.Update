@@ -18,7 +18,7 @@ strategy:
       imageName: 'ubuntu-latest'
     Windows:
       osName: 'Windows'
-      imageName: 'vs2017-win2016'
+      imageName: 'windows-latest'
     Mac:
       osName: 'macOS'
       imageName: 'macOS-latest'
@@ -33,6 +33,11 @@ variables:
   'Lidarr:DataDirectory': $(Build.SourcesDirectory)
 
 steps:
+- task: UseDotNet@2
+  displayName: 'Install .net core 3.0'
+  inputs:
+    version: '3.0.x'
+    condition: ne(variables['osName'], 'Windows')
 - task: SonarCloudPrepare@1
   displayName: 'Prepare SonarCloud'
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
@@ -42,10 +47,12 @@ steps:
     scannerMode: 'MSBuild'
     projectKey: 'lidarr_LidarrAPI.Update'
     projectName: 'LidarrAPI.Update'
-- powershell: dotnet restore --no-cache
-  displayName: 'Restore'
-- powershell: dotnet build .\LidarrAPI\LidarrAPI.csproj -c $(buildConfiguration)
-  displayName: 'Build'
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: 'build'
+    arguments: '-c Release'
+    projects: 'src/LidarrAPI.sln'
 - task: SonarCloudAnalyze@1
   displayName: 'SonarCloud Analysis'
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
@@ -54,9 +61,11 @@ steps:
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
   inputs:
     pollingTimeoutSec: '300'
-- powershell: dotnet ef database update --project LidarrAPI --startup-project LidarrAPI
+- powershell: |
+    dotnet tool install --global dotnet-ef
+    dotnet ef database update --project src/LidarrAPI/LidarrAPI.csproj --startup-project src/LidarrAPI/LidarrAPI.csproj
   displayName: 'Test Database Migrations'
   condition: and(succeeded(), eq(variables['osName'], 'Linux'))
-- publish: ./LidarrAPI/bin/Release
+- publish: ./src/LidarrAPI/bin/Release
   artifact: '$(imageName) Package'
   displayName: Publish Packages
