@@ -172,5 +172,75 @@ namespace LidarrAPI.Controllers
                 }
             };
         }
+
+        [Route("{branch}/updatefile")]
+        [HttpGet]
+        public object GetUpdateFile([FromRoute(Name = "branch")] Branch updateBranch,
+                                    [FromQuery(Name = "version")] string urlVersion,
+                                    [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                    [FromQuery(Name = "runtime")] Runtime runtime,
+                                    [FromQuery(Name = "arch")] Architecture arch)
+        {
+            // Check given version
+            if (!Version.TryParse(urlVersion, out Version version))
+            {
+                return new
+                {
+                    ErrorMessage = "Invalid version number specified."
+                };
+            }
+
+            // Mono and Dotnet are equivalent for our purposes
+            if (runtime == Runtime.Mono)
+            {
+                runtime = Runtime.DotNet;
+            }
+
+            // If runtime is DotNet then default arch to x64
+            if (runtime == Runtime.DotNet)
+            {
+                arch = Architecture.X64;
+            }
+
+            Expression<Func<UpdateFileEntity, bool>> predicate;
+            if (operatingSystem == OperatingSystem.Linux)
+            {
+                predicate = x => x.OperatingSystem == operatingSystem &&
+                    x.Architecture == arch &&
+                    x.Runtime == runtime;
+            }
+            else
+            {
+                predicate = x => x.OperatingSystem == operatingSystem;
+            }
+
+            // Grab latest update based on branch and operatingsystem
+            var update = _database.UpdateEntities
+                .Include(x => x.UpdateFiles)
+                .Where(x => x.Branch == updateBranch &&
+                       x.Version == version.ToString() &&
+                       x.UpdateFiles.AsQueryable().Any(predicate))
+                .FirstOrDefault();
+
+            if (update == null)
+            {
+                return new
+                    {
+                        ErrorMessage = $"Version {version} not found."
+                    };
+            }
+
+            // Check if update file is present
+            var updateFile = update.UpdateFiles.FirstOrDefault(predicate.Compile());
+            if (updateFile == null)
+            {
+                return new
+                    {
+                        ErrorMessage = "Update file for {version} not found."
+                    };
+            }
+
+            return RedirectPermanent(updateFile.Url);
+        }
     }
 }
