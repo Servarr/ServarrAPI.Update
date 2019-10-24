@@ -23,25 +23,59 @@ namespace LidarrAPI.Controllers
             _database = database;
         }
 
+        private IQueryable<UpdateFileEntity> GetUpdateFiles(Branch branch, OperatingSystem os, Runtime runtime, Architecture arch)
+        {
+            // Mono and Dotnet are equivalent for our purposes
+            if (runtime == Runtime.Mono)
+            {
+                runtime = Runtime.DotNet;
+            }
+
+            // If runtime is DotNet then default arch to x64
+            if (runtime == Runtime.DotNet)
+            {
+                arch = Architecture.X64;
+            }
+
+            Expression<Func<UpdateFileEntity, bool>> predicate;
+
+            // Return whatever runtime/arch for macos and windows
+            // Choose correct runtime/arch for linux
+            if (os == OperatingSystem.Linux)
+            {
+                predicate = (x) => x.Update.Branch == branch &&
+                    x.OperatingSystem == os &&
+                    x.Architecture == arch &&
+                    x.Runtime == runtime;
+            }
+            else
+            {
+                predicate = (x) => x.Update.Branch == branch &&
+                    x.OperatingSystem == os;
+            }
+
+            return _database.UpdateFileEntities
+                .Include(x => x.Update)
+                .Where(predicate)
+                .OrderByDescending(x => x.Update.ReleaseDate);
+        }
+
         [Route("{branch}/changes")]
         [HttpGet]
-        public object GetChanges([FromRoute(Name = "branch")] Branch updateBranch,
-            [FromQuery(Name = "version")] string urlVersion, [FromQuery(Name = "os")] OperatingSystem operatingSystem)
+        public object GetChanges(
+            [FromRoute(Name = "branch")] Branch updateBranch,
+            [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+            [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
+            [FromQuery(Name = "arch")] Architecture arch = Architecture.X64
+            )
         {
-            var updates = _database.UpdateEntities
-                .Include(x => x.UpdateFiles)
-                .Where(x => x.Branch == updateBranch &&
-                       x.UpdateFiles.Any(u => u.OperatingSystem == operatingSystem))
-                .OrderByDescending(x => x.ReleaseDate)
-                .Take(5);
+            var updateFiles = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).Take(5);
 
             var response = new List<UpdatePackage>();
 
-            foreach (var update in updates)
+            foreach (var updateFile in updateFiles)
             {
-                var updateFile = update.UpdateFiles.FirstOrDefault(u => u.OperatingSystem == operatingSystem);
-                if (updateFile == null) continue;
-
+                var update = updateFile.Update;
                 UpdateChanges updateChanges = null;
 
                 if (update.New.Count != 0 || update.Fixed.Count != 0)
@@ -78,7 +112,7 @@ namespace LidarrAPI.Controllers
                                  [FromQuery(Name = "arch")] Architecture arch)
         {
             // Check given version
-            if (!Version.TryParse(urlVersion, out Version version))
+            if (!Version.TryParse(urlVersion, out var version))
             {
                 return new
                 {
@@ -86,53 +120,17 @@ namespace LidarrAPI.Controllers
                 };
             }
 
-            // Mono and Dotnet are equivalent for our purposes
-            if (runtime == Runtime.Mono)
-            {
-                runtime = Runtime.DotNet;
-            }
+            var updateFile = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).FirstOrDefault();
 
-            // If runtime is DotNet then default arch to x64
-            if (runtime == Runtime.DotNet)
-            {
-                arch = Architecture.X64;
-            }
-
-            Expression<Func<UpdateFileEntity, bool>> predicate;
-            if (operatingSystem == OperatingSystem.Linux)
-            {
-                predicate = x => x.OperatingSystem == operatingSystem && x.Architecture == arch && x.Runtime == runtime;
-            }
-            else
-            {
-                predicate = x => x.OperatingSystem == operatingSystem;
-            }
-
-            // Grab latest update based on branch and operatingsystem
-            var update = _database.UpdateEntities
-                .Include(x => x.UpdateFiles)
-                .Where(x => x.Branch == updateBranch &&
-                       x.UpdateFiles.AsQueryable().Any(predicate))
-                .OrderByDescending(x => x.ReleaseDate)
-                .FirstOrDefault();
-
-            if (update == null)
-            {
-                return new
-                    {
-                        ErrorMessage = "Latest update not found."
-                    };
-            }
-
-            // Check if update file is present
-            var updateFile = update.UpdateFiles.FirstOrDefault(predicate.Compile());
             if (updateFile == null)
             {
-                return new
-                    {
-                        ErrorMessage = "Latest update file not found."
-                    };
+                return new UpdatePackageContainer
+                {
+                    Available = false
+                };
             }
+
+            var update = updateFile.Update;
 
             // Compare given version and update version
             var updateVersion = new Version(update.Version);
@@ -190,48 +188,8 @@ namespace LidarrAPI.Controllers
                 };
             }
 
-            // Mono and Dotnet are equivalent for our purposes
-            if (runtime == Runtime.Mono)
-            {
-                runtime = Runtime.DotNet;
-            }
+            var updateFile = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).FirstOrDefault(x => x.Update.Version == version.ToString());
 
-            // If runtime is DotNet then default arch to x64
-            if (runtime == Runtime.DotNet)
-            {
-                arch = Architecture.X64;
-            }
-
-            Expression<Func<UpdateFileEntity, bool>> predicate;
-            if (operatingSystem == OperatingSystem.Linux)
-            {
-                predicate = x => x.OperatingSystem == operatingSystem &&
-                    x.Architecture == arch &&
-                    x.Runtime == runtime;
-            }
-            else
-            {
-                predicate = x => x.OperatingSystem == operatingSystem;
-            }
-
-            // Grab latest update based on branch and operatingsystem
-            var update = _database.UpdateEntities
-                .Include(x => x.UpdateFiles)
-                .Where(x => x.Branch == updateBranch &&
-                       x.Version == version.ToString() &&
-                       x.UpdateFiles.AsQueryable().Any(predicate))
-                .FirstOrDefault();
-
-            if (update == null)
-            {
-                return new
-                    {
-                        ErrorMessage = $"Version {version} not found."
-                    };
-            }
-
-            // Check if update file is present
-            var updateFile = update.UpdateFiles.FirstOrDefault(predicate.Compile());
             if (updateFile == null)
             {
                 return new
