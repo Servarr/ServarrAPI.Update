@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using LidarrAPI.Update;
 
 namespace LidarrAPI.Database.Models
 {
@@ -41,7 +40,7 @@ namespace LidarrAPI.Database.Models
         /// <summary>
         ///     The update branch.
         /// </summary>
-        public Branch Branch { get; set; }
+        public string Branch { get; set; }
 
         /// <summary>
         ///     The Status

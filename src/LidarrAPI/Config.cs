@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using LidarrAPI.Update;
-
 namespace LidarrAPI
 {
     public class Config
@@ -10,7 +7,5 @@ namespace LidarrAPI
         public string Database { get; set; }
 
         public string ApiKey { get; set; }
-
-        public Dictionary<Branch, List<string>> Triggers { get; set; }
     }
 }

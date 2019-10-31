@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using LidarrAPI.Database;
 using LidarrAPI.Release;
@@ -33,27 +32,11 @@ namespace LidarrAPI
 
             SetupDataDirectory();
 
-            var triggersString = "";
-            if (ConfigLidarr.Triggers != null)
-            {
-                triggersString += "Triggers\t>\n";
-                foreach (KeyValuePair<Update.Branch, List<String>> entry in ConfigLidarr.Triggers)
-                {
-                    var combined = String.Join(", ", entry.Value);
-                    triggersString += $"\t\t{entry.Key}: {combined}\n";
-                }
-            }
-            else
-            {
-                triggersString += "No triggers registered";
-            }
-
             Log.Debug($@"Config Variables
             ----------------
             DataDirectory  : {ConfigLidarr.DataDirectory}
             Database       : {ConfigLidarr.Database}
-            APIKey         : {ConfigLidarr.ApiKey}
-            {triggersString}");
+            APIKey         : {ConfigLidarr.ApiKey}");
         }
 
         public IConfiguration Config { get; }

@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using LidarrAPI.Update;
 
 namespace LidarrAPI.Release
 {
@@ -8,12 +7,9 @@ namespace LidarrAPI.Release
     {
         protected ReleaseSourceBase()
         {
-            ReleaseBranch = Branch.Unknown;
             FetchSemaphore = new Semaphore(1, 1);
         }
 
-        public Branch ReleaseBranch { get; set; }
-        
         /// <summary>
         ///     Used to have only one thread fetch releases.
         /// </summary>
