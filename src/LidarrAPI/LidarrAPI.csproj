@@ -13,7 +13,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Serilog.AspNetCore" Version="3.1.0" />
-    <PackageReference Include="Octokit" Version="0.36.0" />
+    <PackageReference Include="Octokit" Version="0.43.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="3.0.0-rc1.final" />
     <PackageReference Include="Sentry.AspNetCore" Version="2.0.0-beta4" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.153.0" />
