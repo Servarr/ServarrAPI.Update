@@ -34,9 +34,9 @@ variables:
 
 steps:
 - task: UseDotNet@2
-  displayName: 'Install .net core 3.0'
+  displayName: 'Install .net core 3.1'
   inputs:
-    version: '3.0.x'
+    version: '3.1.102'
     condition: ne(variables['osName'], 'Windows')
 - task: SonarCloudPrepare@1
   displayName: 'Prepare SonarCloud'

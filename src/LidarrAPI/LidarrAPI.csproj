@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <!-- SonarQube needs this -->
     <ProjectGuid>{CEF7BF47-F05C-4131-90B2-757FBC168CAF}</ProjectGuid>
   </PropertyGroup>
