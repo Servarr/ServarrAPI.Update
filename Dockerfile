@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=sdk /app/out/. ./
 
 # Docker Entry
-ENTRYPOINT ["dotnet", "LidarrAPI.dll"]
+ENTRYPOINT ["dotnet", "ServarrAPI.dll"]

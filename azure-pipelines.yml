@@ -29,8 +29,8 @@ pool:
 variables:
   buildConfiguration: 'Release'
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
-  'Lidarr:Database': 'server=localhost;user id=root;password=root; database=lidarrupdate;CharSet=utf8mb4'
-  'Lidarr:DataDirectory': $(Build.SourcesDirectory)
+  'Servarr:Database': 'server=localhost;user id=root;password=root; database=servarrupdate;CharSet=utf8mb4'
+  'Servarr:DataDirectory': $(Build.SourcesDirectory)
 
 steps:
 - task: UseDotNet@2
@@ -43,16 +43,16 @@ steps:
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
   inputs:
     SonarCloud: 'SonarCloud'
-    organization: 'lidarr'
+    organization: 'servarr'
     scannerMode: 'MSBuild'
-    projectKey: 'lidarr_LidarrAPI.Update'
-    projectName: 'LidarrAPI.Update'
+    projectKey: 'servarr_ServarrAPI.Update'
+    projectName: 'ServarrAPI.Update'
 - task: DotNetCoreCLI@2
   displayName: Build
   inputs:
     command: 'build'
     arguments: '-c Release'
-    projects: 'src/LidarrAPI.sln'
+    projects: 'src/ServarrAPI.sln'
 - task: SonarCloudAnalyze@1
   displayName: 'SonarCloud Analysis'
   condition: and(succeeded(), eq(variables['osName'], 'Windows'))
@@ -63,9 +63,9 @@ steps:
     pollingTimeoutSec: '300'
 - powershell: |
     dotnet tool install --global dotnet-ef
-    dotnet ef database update --project src/LidarrAPI/LidarrAPI.csproj --startup-project src/LidarrAPI/LidarrAPI.csproj
+    dotnet ef database update --project src/ServarrAPI/ServarrAPI.csproj --startup-project src/ServarrAPI/ServarrAPI.csproj
   displayName: 'Test Database Migrations'
   condition: and(succeeded(), eq(variables['osName'], 'Linux'))
-- publish: ./src/LidarrAPI/bin/Release
+- publish: ./src/ServarrAPI/bin/Release
   artifact: '$(imageName) Package'
   displayName: Publish Packages

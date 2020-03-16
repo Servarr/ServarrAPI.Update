@@ -5,13 +5,13 @@ services:
         restart: always
         environment:
             - MYSQL_ROOT_PASSWORD
-            - MYSQL_DATABASE=lidarrupdate
+            - MYSQL_DATABASE=servarrupdate
             - MYSQL_USER=root
             - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
         volumes:
           - ./my.cnf:/etc/my.cnf
             
-    lidarrupdate:
+    servarrupdate:
         build: .
         restart: always
         ports:
@@ -21,10 +21,16 @@ services:
             - mysql
 
         environment:
-            - Lidarr:DataDirectory=/data
-            - Lidarr:Database=server=mysql;user id=root;password=${MYSQL_ROOT_PASSWORD};database=lidarrupdate;CharSet=utf8mb4
-            - Lidarr:ApiKey=
+            - Servarr:DataDirectory=/data
+            - Servarr:Database=server=mysql;user id=root;password=${MYSQL_ROOT_PASSWORD};database=${MYSQL_DATABASE};CharSet=utf8mb4
+            - Servarr:ApiKey=
+            - Servarr:Project=Lidarr
+            - Sentry:Dsn=https://38d297b91a4542ed8cf9098fcfbc2514@sentry.radarr.video/19
+            # - Servarr:Project=Radarr
+            # - Sentry:Dsn=https://43c8749e842c48459ec24b16dc32f01d@sentry.radarr.video/20
+            # - Servarr:Project=Readarr
+            # - Sentry:Dsn=https://1da208c854404e60a6b781cd17394114@sentry.radarr.video/21
             - ASPNETCORE_URLS=http://0.0.0.0:5000
 
         volumes:
-            - ./lidarrupdate-data:/data
+            - ./servarrupdate-data:/data
