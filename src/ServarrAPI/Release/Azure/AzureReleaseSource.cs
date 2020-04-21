@@ -66,15 +66,15 @@ namespace ServarrAPI.Release.Azure
                                                                   queryOrder: BuildQueryOrder.StartTimeDescending,
                                                                   top: 5);
 
-            var prHistory = await buildClient.GetBuildsAsync(project: _config.Project,
+            var branchHistory = await buildClient.GetBuildsAsync(project: _config.Project,
                                                              definitions: BuildPipelines,
-                                                             reasonFilter: BuildReason.PullRequest | BuildReason.Manual,
+                                                             reasonFilter: BuildReason.PullRequest | BuildReason.Manual | BuildReason.IndividualCI,
                                                              statusFilter: BuildStatus.Completed,
                                                              resultFilter: BuildResult.Succeeded,
                                                              queryOrder: BuildQueryOrder.StartTimeDescending,
-                                                             top: 5);
+                                                             top: 10);
 
-            var history = nightlyHistory.Concat(prHistory).DistinctBy(x => x.Id).OrderByDescending(x => x.Id);
+            var history = nightlyHistory.Concat(branchHistory).DistinctBy(x => x.Id).OrderByDescending(x => x.Id);
 
             // Store here temporarily so we don't break on not processed builds.
             var lastBuild = _lastBuildId;
