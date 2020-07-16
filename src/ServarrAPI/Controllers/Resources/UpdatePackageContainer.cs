@@ -1,4 +1,4 @@
-﻿namespace ServarrAPI.Update.Data
+﻿namespace ServarrAPI.Controllers.Update
 {
     public class UpdatePackageContainer
     {

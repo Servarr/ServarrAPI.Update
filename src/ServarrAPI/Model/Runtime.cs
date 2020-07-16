@@ -1,4 +1,4 @@
-﻿namespace ServarrAPI.Update
+﻿namespace ServarrAPI.Model
 {
     // This matches the PlatformType enum in Lidarr/Radarr/Readarr
     public enum Runtime

@@ -5,16 +5,14 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Octokit;
-using ServarrAPI.Database;
-using ServarrAPI.Database.Models;
 using ServarrAPI.Extensions;
+using ServarrAPI.Model;
 using ServarrAPI.Util;
 
 namespace ServarrAPI.Release.Azure
@@ -31,18 +29,21 @@ namespace ServarrAPI.Release.Azure
         private readonly int[] _buildPipelines = new int[] { 1 };
 
         private readonly Config _config;
-        private readonly DatabaseContext _database;
+        private readonly IUpdateService _updateService;
+        private readonly IUpdateFileService _updateFileService;
         private readonly GitHubClient _githubClient;
         private readonly HttpClient _httpClient;
         private readonly VssConnection _connection;
 
         private readonly ILogger<AzureReleaseSource> _logger;
 
-        public AzureReleaseSource(DatabaseContext database,
+        public AzureReleaseSource(IUpdateService updateService,
+                                  IUpdateFileService updateFileService,
                                   IOptions<Config> config,
                                   ILogger<AzureReleaseSource> logger)
         {
-            _database = database;
+            _updateService = updateService;
+            _updateFileService = updateFileService;
             _config = config.Value;
 
             _connection = new VssConnection(new Uri($"https://dev.azure.com/{_config.Project}"), new VssBasicCredential());
@@ -152,27 +153,23 @@ namespace ServarrAPI.Release.Azure
                 var files = await artifactClient.GetArtifactFiles(_config.Project, build.Id, artifact);
 
                 // Get an updateEntity
-                var updateEntity = _database.UpdateEntities
-                    .Include(x => x.UpdateFiles)
-                    .FirstOrDefault(x => x.Version.Equals(build.BuildNumber) && x.Branch.Equals(branch));
+                var updateEntity = await _updateService.Find(build.BuildNumber, branch).ConfigureAwait(false);
 
-                if (updateEntity == null)
+                if (updateEntity != null)
                 {
-                    // Create update object
-                    updateEntity = new UpdateEntity
-                    {
-                        Version = build.BuildNumber,
-                        ReleaseDate = build.StartTime.Value,
-                        Branch = branch,
-                        Status = build.Status.ToString()
-                    };
-
-                    // Start tracking this object
-                    _ = await _database.AddAsync(updateEntity);
-
-                    // Set new release to true.
-                    hasNewRelease = true;
+                    continue;
                 }
+
+                // Create update object
+                updateEntity = new UpdateEntity
+                {
+                    Version = build.BuildNumber,
+                    ReleaseDate = build.StartTime.Value,
+                    Branch = branch
+                };
+
+                // Set new release to true.
+                hasNewRelease = true;
 
                 // Parse changes
                 var changes = await changesTask;
@@ -198,76 +195,9 @@ namespace ServarrAPI.Release.Azure
                     }
                 }
 
-                // Process artifacts
-                foreach (var file in files)
-                {
-                    _logger.LogDebug("Processing {0}", file.Path);
+                await _updateService.Insert(updateEntity).ConfigureAwait(false);
 
-                    // Detect target operating system.
-                    var operatingSystem = Parser.ParseOS(file.Path);
-                    if (!operatingSystem.HasValue)
-                    {
-                        continue;
-                    }
-
-                    _logger.LogDebug("Got os {0}", operatingSystem);
-
-                    // Detect runtime / arch
-                    var runtime = Parser.ParseRuntime(file.Path);
-                    _logger.LogDebug("Got runtime {0}", runtime);
-
-                    var arch = Parser.ParseArchitecture(file.Path);
-                    _logger.LogDebug("Got arch {0}", arch);
-
-                    // Check if exists in database.
-                    var updateFileEntity = _database.UpdateFileEntities
-                        .FirstOrDefault(x =>
-                            x.UpdateEntityId == updateEntity.UpdateEntityId &&
-                            x.OperatingSystem == operatingSystem.Value &&
-                            x.Runtime == runtime &&
-                            x.Architecture == arch);
-
-                    if (updateFileEntity != null)
-                    {
-                        continue;
-                    }
-
-                    // Calculate the hash of the zip file.
-                    var releaseFileName = Path.GetFileName(file.Path);
-                    var releaseZip = Path.Combine(_config.DataDirectory, branch, releaseFileName);
-                    string releaseHash;
-
-                    if (!File.Exists(releaseZip))
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
-
-                        using var fileStream = File.OpenWrite(releaseZip);
-                        using var artifactStream = await _httpClient.GetStreamAsync(file.Url);
-                        await artifactStream.CopyToAsync(fileStream);
-                    }
-
-                    using (var stream = File.OpenRead(releaseZip))
-                    {
-                        using var sha = SHA256.Create();
-                        releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
-                    }
-
-                    File.Delete(releaseZip);
-
-                    // Add to database.
-                    updateEntity.UpdateFiles.Add(new UpdateFileEntity
-                    {
-                        OperatingSystem = operatingSystem.Value,
-                        Architecture = arch,
-                        Runtime = runtime,
-                        Filename = releaseFileName,
-                        Url = file.Url,
-                        Hash = releaseHash
-                    });
-                }
-
-                // Save all changes to the database.
-                await _database.SaveChangesAsync();
+                await Task.WhenAll(files.Select(x => ProcessFile(x, branch, updateEntity.Id))).ConfigureAwait(false);
 
                 // Make sure we atleast skip this build next time.
                 if (_lastBuildId == null ||
@@ -278,6 +208,63 @@ namespace ServarrAPI.Release.Azure
             }
 
             return hasNewRelease;
+        }
+
+        private async Task ProcessFile(AzureFile file, string branch, int updateId)
+        {
+            _logger.LogDebug("Processing {0}", file.Path);
+
+            // Detect target operating system.
+            var operatingSystem = Parser.ParseOS(file.Path);
+            if (!operatingSystem.HasValue)
+            {
+                return;
+            }
+
+            _logger.LogDebug("Got os {0}", operatingSystem);
+
+            // Detect runtime / arch
+            var runtime = Parser.ParseRuntime(file.Path);
+            _logger.LogDebug("Got runtime {0}", runtime);
+
+            var arch = Parser.ParseArchitecture(file.Path);
+            _logger.LogDebug("Got arch {0}", arch);
+
+            // Calculate the hash of the zip file.
+            var releaseFileName = Path.GetFileName(file.Path);
+            var releaseZip = Path.Combine(_config.DataDirectory, branch, releaseFileName);
+            string releaseHash;
+
+            if (!File.Exists(releaseZip))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
+
+                using var fileStream = File.OpenWrite(releaseZip);
+                using var artifactStream = await _httpClient.GetStreamAsync(file.Url);
+                await artifactStream.CopyToAsync(fileStream);
+            }
+
+            using (var stream = File.OpenRead(releaseZip))
+            {
+                using var sha = SHA256.Create();
+                releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            File.Delete(releaseZip);
+
+            // Add to database.
+            var updateFile = new UpdateFileEntity
+            {
+                UpdateId = updateId,
+                OperatingSystem = operatingSystem.Value,
+                Architecture = arch,
+                Runtime = runtime,
+                Filename = releaseFileName,
+                Url = file.Url,
+                Hash = releaseHash
+            };
+
+            await _updateFileService.Insert(updateFile).ConfigureAwait(false);
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using ServarrAPI.Update;
-using OperatingSystem = ServarrAPI.Update.OperatingSystem;
+using ServarrAPI.Model;
+using OperatingSystem = ServarrAPI.Model.OperatingSystem;
 
 namespace ServarrAPI.Util
 {
