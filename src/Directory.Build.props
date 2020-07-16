@@ -1,0 +1,71 @@
+<Project>
+  <!-- Common to all Servarr Projects -->
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>$(SolutionDir)Stylecop.ruleset</CodeAnalysisRuleSet>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <DebugSymbols>true</DebugSymbols>
+
+    <RootDir>$(MSBuildThisFileDirectory)..\</RootDir>
+
+    <ServarrOutputType>Library</ServarrOutputType>
+    <ServarrOutputType Condition="$(MSBuildProjectName.Contains('.Test'))">Test</ServarrOutputType>
+
+  </PropertyGroup>
+
+  <!-- Set the Product and Version info for our own projects -->
+  <PropertyGroup>
+    <Product>ServarrAPI.Update</Product>
+    <Company>servarr.com</Company>
+    <Copyright>Copyright 2017-$([System.DateTime]::Now.ToString('yyyy')) radarr.video (GNU General Public v3)</Copyright>
+    
+    <!-- Should be replaced by CI -->
+    <AssemblyVersion>10.0.0.*</AssemblyVersion>
+    <AssemblyConfiguration>$(Configuration)-dev</AssemblyConfiguration>
+
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    
+    <Deterministic Condition="$(AssemblyVersion.EndsWith('*'))">False</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)'==''">Release</Configuration>
+    <!-- Centralize intermediate and default outputs -->
+    <BaseIntermediateOutputPath>$(RootDir)_temp\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$(RootDir)_temp\obj\$(MSBuildProjectName)\$(Configuration)\</IntermediateOutputPath>
+    <OutputPath>$(RootDir)_temp\bin\$(Configuration)\$(MSBuildProjectName)\</OutputPath>
+
+    <!-- Output to _output and _tests respectively -->
+    <OutputPath>$(RootDir)_output\</OutputPath>
+    <OutputPath Condition="'$(ServarrOutputType)'=='Test'">$(RootDir)_tests\</OutputPath>
+    <OutputPath Condition="'$(ServarrOutputType)'=='Update'">$(RootDir)_output\Lidarr.Update\</OutputPath>
+
+    <!-- Paths relative to project file for better readability -->
+    <BaseIntermediateOutputPath>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)'))</BaseIntermediateOutputPath>
+    <IntermediateOutputPath>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(IntermediateOutputPath)'))</IntermediateOutputPath>
+    <OutputPath>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(OutputPath)'))</OutputPath>
+
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <!-- Set the AssemblyConfiguration attribute for projects -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyConfigurationAttribute">
+      <_Parameter1>$(AssemblyConfiguration)</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- Set up stylecop -->
+  <ItemGroup>
+    <!-- StyleCop analysis -->
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <AdditionalFiles Include="$(SolutionDir)stylecop.json" />
+  </ItemGroup>
+</Project>

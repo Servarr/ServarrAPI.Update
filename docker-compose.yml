@@ -1,36 +1,36 @@
-version: '2'
+version: '3'
+
+volumes:
+  postgres:
+    driver: local
+
 services:
-    mysql:
-        image: mysql/mysql-server
-        restart: always
-        environment:
-            - MYSQL_ROOT_PASSWORD
-            - MYSQL_DATABASE=servarrupdate
-            - MYSQL_USER=root
-            - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
-        volumes:
-          - ./my.cnf:/etc/my.cnf
-            
-    servarrupdate:
-        build: .
-        restart: always
-        ports:
-            - "5000:5000"
+  db:
+    image: postgres:11-alpine
+    restart: always
+    ports:
+      - 5438:5432
+    environment:
+      - POSTGRES_USER=abc
+      - POSTGRES_PASSWORD=abc
+      - POSTGRES_DB=servarr
+    volumes:
+      - postgres:/var/lib/postgresql/data
 
-        links:
-            - mysql
+  servarrupdate:
+    build: .
+    restart: always
+    ports:
+      - "5000:5000"
 
-        environment:
-            - Servarr:DataDirectory=/data
-            - Servarr:Database=server=mysql;user id=root;password=${MYSQL_ROOT_PASSWORD};database=${MYSQL_DATABASE};CharSet=utf8mb4
-            - Servarr:ApiKey=
-            - Servarr:Project=Lidarr
-            - Sentry:Dsn=https://38d297b91a4542ed8cf9098fcfbc2514@sentry.radarr.video/19
-            # - Servarr:Project=Radarr
-            # - Sentry:Dsn=https://43c8749e842c48459ec24b16dc32f01d@sentry.radarr.video/20
-            # - Servarr:Project=Readarr
-            # - Sentry:Dsn=https://1da208c854404e60a6b781cd17394114@sentry.radarr.video/21
-            - ASPNETCORE_URLS=http://0.0.0.0:5000
+    links:
+      - db
 
-        volumes:
-            - ./servarrupdate-data:/data
+    environment:
+      - Servarr:DataDirectory=/data
+      - Servarr:ApiKey=
+      - Servarr:Project=Lidarr
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
+
+    volumes:
+      - ./servarrupdate-data:/data

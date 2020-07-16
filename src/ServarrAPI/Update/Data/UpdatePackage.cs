@@ -4,7 +4,6 @@ namespace ServarrAPI.Update.Data
 {
     public class UpdatePackage
     {
-        
         public string Version { get; set; }
 
         public DateTime ReleaseDate { get; set; }

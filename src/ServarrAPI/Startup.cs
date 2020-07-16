@@ -1,9 +1,5 @@
 ﻿using System;
 using System.IO;
-using ServarrAPI.Database;
-using ServarrAPI.Release;
-using ServarrAPI.Release.Azure;
-using ServarrAPI.Release.Github;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +9,10 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Octokit;
 using Serilog;
+using ServarrAPI.Database;
+using ServarrAPI.Release;
+using ServarrAPI.Release.Azure;
+using ServarrAPI.Release.Github;
 
 namespace ServarrAPI
 {
@@ -30,24 +30,24 @@ namespace ServarrAPI
             Config = builder.Build();
             ConfigServarr = Config.GetSection("Servarr").Get<Config>();
 
-            SetupDataDirectory();
-
             Log.Debug($@"Config Variables
             ----------------
             DataDirectory  : {ConfigServarr.DataDirectory}
             Database       : {ConfigServarr.Database}
             APIKey         : {ConfigServarr.ApiKey}");
+
+            SetupDataDirectory();
         }
 
         public IConfiguration Config { get; }
-        
+
         public Config ConfigServarr { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<Config>(Config.GetSection("Servarr"));
-            services.AddDbContextPool<DatabaseContext>(o => o.UseMySql(ConfigServarr.Database));
+            services.AddDbContextPool<DatabaseContext>(o => o.UseNpgsql(ConfigServarr.Database));
             services.AddSingleton(new GitHubClient(new ProductHeaderValue("ServarrAPI")));
 
             services.AddTransient<ReleaseService>();
@@ -60,7 +60,7 @@ namespace ServarrAPI
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env)
         {
             UpdateDatabase(app);
 
@@ -89,14 +89,12 @@ namespace ServarrAPI
 
         private static void UpdateDatabase(IApplicationBuilder app)
         {
-            using (var serviceScope = app.ApplicationServices
+            using var serviceScope = app.ApplicationServices
                    .GetRequiredService<IServiceScopeFactory>()
-                   .CreateScope())
+                   .CreateScope();
+            using (var context = serviceScope.ServiceProvider.GetService<DatabaseContext>())
             {
-                using (var context = serviceScope.ServiceProvider.GetService<DatabaseContext>())
-                {
-                    context.Database.Migrate();
-                }
+                context.Database.Migrate();
             }
         }
     }

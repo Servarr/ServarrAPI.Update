@@ -5,33 +5,25 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using ServarrAPI.Database;
-using ServarrAPI.Database.Models;
-using ServarrAPI.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Octokit;
+using ServarrAPI.Database;
+using ServarrAPI.Database.Models;
+using ServarrAPI.Util;
 
 namespace ServarrAPI.Release.Github
 {
     public class GithubReleaseSource : ReleaseSourceBase
     {
-        private readonly Config _config;
-        private readonly DatabaseContext _database;
-
-        private readonly GitHubClient _gitHubClient;
-
-        private readonly HttpClient _httpClient;
-
         private static readonly Regex ReleaseFeaturesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
         private static readonly Regex ReleaseFixesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
-        private enum Branch
-        {
-            Master,
-            Develop
-        }
+        private readonly Config _config;
+        private readonly DatabaseContext _database;
+        private readonly GitHubClient _gitHubClient;
+        private readonly HttpClient _httpClient;
 
         public GithubReleaseSource(DatabaseContext database, IOptions<Config> config)
         {
@@ -39,6 +31,12 @@ namespace ServarrAPI.Release.Github
             _config = config.Value;
             _gitHubClient = new GitHubClient(new ProductHeaderValue("ServarrAPI"));
             _httpClient = new HttpClient();
+        }
+
+        private enum Branch
+        {
+            Master,
+            Develop
         }
 
         protected override async Task<bool> DoFetchReleasesAsync()
@@ -54,7 +52,10 @@ namespace ServarrAPI.Release.Github
             foreach (var release in validReleases)
             {
                 // Check if release has been published.
-                if (!release.PublishedAt.HasValue) continue;
+                if (!release.PublishedAt.HasValue)
+                {
+                    continue;
+                }
 
                 var version = release.TagName.Substring(1);
 
@@ -75,7 +76,7 @@ namespace ServarrAPI.Release.Github
 
         private async Task<bool> ProcessRelease(Octokit.Release release, Branch branch, string version)
         {
-            bool isNewRelease = false;
+            var isNewRelease = false;
 
             // Get an updateEntity
             var updateEntity = _database.UpdateEntities
@@ -101,7 +102,7 @@ namespace ServarrAPI.Release.Github
 
             // Parse changes
             var releaseBody = release.Body;
-                
+
             var features = ReleaseFeaturesGroup.Matches(releaseBody);
             if (features.Any())
             {
@@ -144,7 +145,10 @@ namespace ServarrAPI.Release.Github
                                     x.Runtime == runtime &&
                                     x.Architecture == arch);
 
-                if (updateFileEntity != null) continue;
+                if (updateFileEntity != null)
+                {
+                    continue;
+                }
 
                 // Calculate the hash of the zip file.
                 var releaseZip = Path.Combine(_config.DataDirectory, branch.ToString().ToLower(), releaseAsset.Name);
@@ -154,11 +158,9 @@ namespace ServarrAPI.Release.Github
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
 
-                    using (var fileStream = File.OpenWrite(releaseZip))
-                    using (var artifactStream = await _httpClient.GetStreamAsync(releaseAsset.BrowserDownloadUrl))
-                    {
-                        await artifactStream.CopyToAsync(fileStream);
-                    }
+                    using var fileStream = File.OpenWrite(releaseZip);
+                    using var artifactStream = await _httpClient.GetStreamAsync(releaseAsset.BrowserDownloadUrl);
+                    await artifactStream.CopyToAsync(fileStream);
                 }
 
                 using (var stream = File.OpenRead(releaseZip))
