@@ -8,14 +8,13 @@
     <Folder Include="wwwroot\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.6">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Serilog.AspNetCore" Version="3.2.0" />
     <PackageReference Include="Sentry.AspNetCore" Version="2.1.1" />
     <PackageReference Include="Sentry.Serilog" Version="2.1.1" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="3.1.4" />
+    <PackageReference Include="Dapper" Version="2.0.35" />
+    <PackageReference Include="FluentMigrator.Runner" Version="4.0.0-alpha.289" />
+    <PackageReference Include="FluentMigrator.Runner.Postgres" Version="4.0.0-alpha.289" />
+    <PackageReference Include="Npgsql" Version="4.1.3.1" />
     <PackageReference Include="Octokit" Version="0.47.0" />
     <PackageReference Include="Microsoft.TeamFoundationServer.Client" Version="16.153.0" />
   </ItemGroup>

@@ -7,7 +7,7 @@ using ServarrAPI.Release.Github;
 
 namespace ServarrAPI.Controllers
 {
-    [Route("v1/[controller]")]
+    [Route("[controller]")]
     public class WebhookController
     {
         private readonly Config _config;

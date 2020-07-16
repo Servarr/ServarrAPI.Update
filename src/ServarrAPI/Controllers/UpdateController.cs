@@ -1,79 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ServarrAPI.Database;
-using ServarrAPI.Database.Models;
-using ServarrAPI.Update;
-using ServarrAPI.Update.Data;
+using ServarrAPI.Model;
 using Architecture = System.Runtime.InteropServices.Architecture;
-using OperatingSystem = ServarrAPI.Update.OperatingSystem;
+using OperatingSystem = ServarrAPI.Model.OperatingSystem;
 
-namespace ServarrAPI.Controllers
+namespace ServarrAPI.Controllers.Update
 {
-    [Route("v1/[controller]")]
+    [Route("[controller]")]
     public class UpdateController : Controller
     {
-        private readonly DatabaseContext _database;
+        private readonly IUpdateFileService _updateFileService;
 
-        public UpdateController(DatabaseContext database)
+        public UpdateController(IUpdateFileService updateFileService)
         {
-            _database = database;
-        }
-
-        private IQueryable<UpdateFileEntity> GetUpdateFiles(string branch, OperatingSystem os, Runtime runtime, Architecture arch)
-        {
-            // Mono and Dotnet are equivalent for our purposes
-            if (runtime == Runtime.Mono)
-            {
-                runtime = Runtime.DotNet;
-            }
-
-            // If runtime is DotNet then default arch to x64
-            if (runtime == Runtime.DotNet)
-            {
-                arch = Architecture.X64;
-            }
-
-            Expression<Func<UpdateFileEntity, bool>> predicate;
-
-            // Return whatever runtime/arch for macos and windows
-            // Choose correct runtime/arch for linux
-            if (os == OperatingSystem.Linux)
-            {
-                predicate = (x) => x.Update.Branch == branch &&
-                    x.OperatingSystem == os &&
-                    x.Architecture == arch &&
-                    x.Runtime == runtime;
-            }
-            else
-            {
-                predicate = (x) => x.Update.Branch == branch &&
-                    x.OperatingSystem == os;
-            }
-
-            return _database.UpdateFileEntities
-                .Include(x => x.Update)
-                .Where(predicate)
-                .OrderByDescending(x => x.Update.ReleaseDate);
+            _updateFileService = updateFileService;
         }
 
         [Route("{branch}/changes")]
         [HttpGet]
-        public object GetChanges([FromRoute(Name = "branch")] string updateBranch,
-                                 [FromQuery(Name = "os")] OperatingSystem operatingSystem,
-                                 [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
-                                 [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
+        public async Task<object> GetChanges([FromRoute(Name = "branch")] string updateBranch,
+                                             [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                             [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
+                                             [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
-            var updateFiles = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).Take(5);
+            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5);
 
             var response = new List<UpdatePackage>();
 
             foreach (var updateFile in updateFiles)
             {
-                var update = updateFile.Update;
+                var update = updateFile.Update.Value;
                 UpdateChanges updateChanges = null;
 
                 if (update.New.Count != 0 || update.Fixed.Count != 0)
@@ -86,16 +45,15 @@ namespace ServarrAPI.Controllers
                 }
 
                 response.Add(new UpdatePackage
-                    {
-                        Version = update.Version,
-                        ReleaseDate = update.ReleaseDate,
-                        Filename = updateFile.Filename,
-                        Url = updateFile.Url,
-                        Changes = updateChanges,
-                        Hash = updateFile.Hash,
-                        Status = update.Status,
-                        Branch = update.Branch.ToString().ToLower()
-                    });
+                {
+                    Version = update.Version,
+                    ReleaseDate = update.ReleaseDate,
+                    Filename = updateFile.Filename,
+                    Url = updateFile.Url,
+                    Changes = updateChanges,
+                    Hash = updateFile.Hash,
+                    Branch = update.Branch.ToString().ToLower()
+                });
             }
 
             return response;
@@ -103,11 +61,11 @@ namespace ServarrAPI.Controllers
 
         [Route("{branch}")]
         [HttpGet]
-        public object GetUpdates([FromRoute(Name = "branch")] string updateBranch,
-                                 [FromQuery(Name = "version")] string urlVersion,
-                                 [FromQuery(Name = "os")] OperatingSystem operatingSystem,
-                                 [FromQuery(Name = "runtime")] Runtime runtime,
-                                 [FromQuery(Name = "arch")] Architecture arch)
+        public async Task<object> GetUpdates([FromRoute(Name = "branch")] string updateBranch,
+                                             [FromQuery(Name = "version")] string urlVersion,
+                                             [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                             [FromQuery(Name = "runtime")] Runtime runtime,
+                                             [FromQuery(Name = "arch")] Architecture arch)
         {
             // Check given version
             if (!Version.TryParse(urlVersion, out var version))
@@ -118,7 +76,8 @@ namespace ServarrAPI.Controllers
                 };
             }
 
-            var updateFile = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).FirstOrDefault();
+            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5);
+            var updateFile = files.FirstOrDefault();
 
             if (updateFile == null)
             {
@@ -128,7 +87,7 @@ namespace ServarrAPI.Controllers
                 };
             }
 
-            var update = updateFile.Update;
+            var update = updateFile.Update.Value;
 
             // Compare given version and update version
             var updateVersion = new Version(update.Version);
@@ -171,37 +130,38 @@ namespace ServarrAPI.Controllers
 
         [Route("{branch}/updatefile")]
         [HttpGet]
-        public object GetUpdateFile([FromRoute(Name = "branch")] string updateBranch,
-                                    [FromQuery(Name = "version")] string urlVersion,
-                                    [FromQuery(Name = "os")] OperatingSystem operatingSystem,
-                                    [FromQuery(Name = "runtime")] Runtime runtime,
-                                    [FromQuery(Name = "arch")] Architecture arch)
+        public async Task<object> GetUpdateFile([FromRoute(Name = "branch")] string updateBranch,
+                                                [FromQuery(Name = "version")] string urlVersion,
+                                                [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                                [FromQuery(Name = "runtime")] Runtime runtime,
+                                                [FromQuery(Name = "arch")] Architecture arch)
         {
             UpdateFileEntity updateFile;
 
             if (urlVersion != null)
             {
-                if (!Version.TryParse(urlVersion, out Version version))
+                if (!Version.TryParse(urlVersion, out var _))
                 {
                     return new
-                        {
-                            ErrorMessage = "Invalid version number specified."
-                        };
+                    {
+                        ErrorMessage = "Invalid version number specified."
+                    };
                 }
 
-                updateFile = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).FirstOrDefault(x => x.Update.Version == version.ToString());
+                updateFile = await _updateFileService.Find(urlVersion, updateBranch, operatingSystem, runtime, arch);
             }
             else
             {
-                updateFile = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).FirstOrDefault();
+                var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1);
+                updateFile = updateFiles.FirstOrDefault();
             }
 
             if (updateFile == null)
             {
                 return new
-                    {
-                        ErrorMessage = $"Update file for {updateBranch}-{urlVersion} not found."
-                    };
+                {
+                    ErrorMessage = $"Update file for {updateBranch}-{urlVersion} not found."
+                };
             }
 
             return RedirectPermanent(updateFile.Url);

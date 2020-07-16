@@ -13,7 +13,7 @@ services:
     environment:
       - POSTGRES_USER=abc
       - POSTGRES_PASSWORD=abc
-      - POSTGRES_DB=servarr
+      - POSTGRES_DB=lidarr
     volumes:
       - postgres:/var/lib/postgresql/data
 

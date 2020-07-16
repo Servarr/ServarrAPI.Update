@@ -5,11 +5,9 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Octokit;
-using ServarrAPI.Database;
-using ServarrAPI.Database.Models;
+using ServarrAPI.Model;
 using ServarrAPI.Util;
 
 namespace ServarrAPI.Release.Github
@@ -21,22 +19,20 @@ namespace ServarrAPI.Release.Github
         private static readonly Regex ReleaseFixesGroup = new Regex(@"\*\s+[0-9a-f]{40}\s+Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled | RegexOptions.Multiline);
 
         private readonly Config _config;
-        private readonly DatabaseContext _database;
+        private readonly IUpdateService _updateService;
+        private readonly IUpdateFileService _updateFileService;
         private readonly GitHubClient _gitHubClient;
         private readonly HttpClient _httpClient;
 
-        public GithubReleaseSource(DatabaseContext database, IOptions<Config> config)
+        public GithubReleaseSource(IUpdateService updateService,
+                                   IUpdateFileService updateFileService,
+                                   IOptions<Config> config)
         {
-            _database = database;
+            _updateService = updateService;
+            _updateFileService = updateFileService;
             _config = config.Value;
             _gitHubClient = new GitHubClient(new ProductHeaderValue("ServarrAPI"));
             _httpClient = new HttpClient();
-        }
-
-        private enum Branch
-        {
-            Master,
-            Develop
         }
 
         protected override async Task<bool> DoFetchReleasesAsync()
@@ -60,45 +56,42 @@ namespace ServarrAPI.Release.Github
                 var version = release.TagName.Substring(1);
 
                 // determine the branch
-                var branch = release.Assets.Any(a => a.Name.StartsWith(string.Format("{0}.master", _config.Project))) ? Branch.Master : Branch.Develop;
+                var branch = release.Assets.Any(a => a.Name.StartsWith(string.Format("{0}.master", _config.Project))) ? "master" : "develop";
 
                 hasNewRelease |= await ProcessRelease(release, branch, version);
 
                 // releases on master should also appear on develop
-                if (branch == Branch.Master)
+                if (branch == "master")
                 {
-                    hasNewRelease |= await ProcessRelease(release, Branch.Develop, version);
+                    hasNewRelease |= await ProcessRelease(release, "develop", version);
                 }
             }
 
             return hasNewRelease;
         }
 
-        private async Task<bool> ProcessRelease(Octokit.Release release, Branch branch, string version)
+        private async Task<bool> ProcessRelease(Octokit.Release release, string branch, string version)
         {
             var isNewRelease = false;
 
             // Get an updateEntity
-            var updateEntity = _database.UpdateEntities
-                .Include(x => x.UpdateFiles)
-                .FirstOrDefault(x => x.Version.Equals(version) && x.Branch.Equals(branch.ToString().ToLower()));
+            var updateEntity = await _updateService.Find(version, branch).ConfigureAwait(false);
 
-            if (updateEntity == null)
+            if (updateEntity != null)
             {
-                // Create update object
-                updateEntity = new UpdateEntity
-                {
-                    Version = version,
-                    ReleaseDate = release.PublishedAt.Value.UtcDateTime,
-                    Branch = branch.ToString().ToLower()
-                };
-
-                // Start tracking this object
-                await _database.AddAsync(updateEntity);
-
-                // Set new release to true.
-                isNewRelease = true;
+                return isNewRelease;
             }
+
+            // Create update object
+            updateEntity = new UpdateEntity
+            {
+                Version = version,
+                ReleaseDate = release.PublishedAt.Value.UtcDateTime,
+                Branch = branch
+            };
+
+            // Set new release to true.
+            isNewRelease = true;
 
             // Parse changes
             var releaseBody = release.Body;
@@ -125,68 +118,65 @@ namespace ServarrAPI.Release.Github
                 }
             }
 
+            await _updateService.Insert(updateEntity).ConfigureAwait(false);
+
             // Process release files.
+            await Task.WhenAll(release.Assets.Select(x => ProcessAsset(x, branch, updateEntity.Id)));
+
+            /*
             foreach (var releaseAsset in release.Assets)
             {
-                var operatingSystem = Parser.ParseOS(releaseAsset.Name);
-                if (!operatingSystem.HasValue)
-                {
-                    continue;
-                }
-
-                var runtime = Parser.ParseRuntime(releaseAsset.Name);
-                var arch = Parser.ParseArchitecture(releaseAsset.Name);
-
-                // Check if exists in database.
-                var updateFileEntity = _database.UpdateFileEntities
-                    .FirstOrDefault(x =>
-                                    x.UpdateEntityId == updateEntity.UpdateEntityId &&
-                                    x.OperatingSystem == operatingSystem.Value &&
-                                    x.Runtime == runtime &&
-                                    x.Architecture == arch);
-
-                if (updateFileEntity != null)
-                {
-                    continue;
-                }
-
-                // Calculate the hash of the zip file.
-                var releaseZip = Path.Combine(_config.DataDirectory, branch.ToString().ToLower(), releaseAsset.Name);
-                string releaseHash;
-
-                if (!File.Exists(releaseZip))
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
-
-                    using var fileStream = File.OpenWrite(releaseZip);
-                    using var artifactStream = await _httpClient.GetStreamAsync(releaseAsset.BrowserDownloadUrl);
-                    await artifactStream.CopyToAsync(fileStream);
-                }
-
-                using (var stream = File.OpenRead(releaseZip))
-                using (var sha = SHA256.Create())
-                {
-                    releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
-                }
-
-                File.Delete(releaseZip);
-
-                // Add to database.
-                updateEntity.UpdateFiles.Add(new UpdateFileEntity
-                    {
-                        OperatingSystem = operatingSystem.Value,
-                        Architecture = arch,
-                        Runtime = runtime,
-                        Filename = releaseAsset.Name,
-                        Url = releaseAsset.BrowserDownloadUrl,
-                        Hash = releaseHash
-                    });
-            }
-
-            // Save all changes to the database.
-            await _database.SaveChangesAsync();
+                await ProcessAsset(releaseAsset, branch, updateEntity.Id);
+            }*/
 
             return isNewRelease;
+        }
+
+        private async Task ProcessAsset(Octokit.ReleaseAsset releaseAsset, string branch, int updateId)
+        {
+            var operatingSystem = Parser.ParseOS(releaseAsset.Name);
+            if (!operatingSystem.HasValue)
+            {
+                return;
+            }
+
+            var runtime = Parser.ParseRuntime(releaseAsset.Name);
+            var arch = Parser.ParseArchitecture(releaseAsset.Name);
+
+            // Calculate the hash of the zip file.
+            var releaseZip = Path.Combine(_config.DataDirectory, branch.ToString().ToLower(), releaseAsset.Name);
+            string releaseHash;
+
+            if (!File.Exists(releaseZip))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
+
+                using var fileStream = File.OpenWrite(releaseZip);
+                using var artifactStream = await _httpClient.GetStreamAsync(releaseAsset.BrowserDownloadUrl);
+                await artifactStream.CopyToAsync(fileStream);
+            }
+
+            using (var stream = File.OpenRead(releaseZip))
+            using (var sha = SHA256.Create())
+            {
+                releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
+            }
+
+            File.Delete(releaseZip);
+
+            // Add to database.
+            var updateFile = new UpdateFileEntity
+            {
+                UpdateId = updateId,
+                OperatingSystem = operatingSystem.Value,
+                Architecture = arch,
+                Runtime = runtime,
+                Filename = releaseAsset.Name,
+                Url = releaseAsset.BrowserDownloadUrl,
+                Hash = releaseHash
+            };
+
+            await _updateFileService.Insert(updateFile).ConfigureAwait(false);
         }
     }
 }

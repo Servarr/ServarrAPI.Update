@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ServarrAPI.Update.Data
+namespace ServarrAPI.Controllers.Update
 {
     public class UpdateChanges
     {

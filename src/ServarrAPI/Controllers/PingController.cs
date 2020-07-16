@@ -2,7 +2,7 @@
 
 namespace ServarrAPI.Controllers
 {
-    [Route("v1/[controller]")]
+    [Route("[controller]")]
     public class PingController
     {
         [HttpGet]
