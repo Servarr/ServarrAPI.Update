@@ -51,7 +51,7 @@ namespace ServarrAPI.Database.Models
         ///     The files that belong to this update.
         /// </summary>
         public List<UpdateFileEntity> UpdateFiles { get; set; }
-        
+
         [JsonIgnore]
         [Column("New")]
         public string NewStr

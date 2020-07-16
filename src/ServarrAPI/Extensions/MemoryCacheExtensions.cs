@@ -12,10 +12,10 @@ namespace ServarrAPI.Extensions
     {
         public static async Task<T> GetValueAsync<T>(this IMemoryCache cache, string cacheKey, Func<Task<T>> retrieveData, TimeSpan cacheTime)
         {
-            T result;
-
-            if (cache.TryGetValue(cacheKey, out result))
+            if (cache.TryGetValue(cacheKey, out T result))
+            {
                 return result;
+            }
 
             result = await retrieveData();
 
@@ -23,6 +23,5 @@ namespace ServarrAPI.Extensions
 
             return result;
         }
-
     }
 }

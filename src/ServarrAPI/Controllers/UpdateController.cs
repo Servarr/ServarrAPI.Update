@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ServarrAPI.Database;
 using ServarrAPI.Database.Models;
 using ServarrAPI.Update;
 using ServarrAPI.Update.Data;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Architecture = System.Runtime.InteropServices.Architecture;
 using OperatingSystem = ServarrAPI.Update.OperatingSystem;
 
@@ -62,12 +62,10 @@ namespace ServarrAPI.Controllers
 
         [Route("{branch}/changes")]
         [HttpGet]
-        public object GetChanges(
-            [FromRoute(Name = "branch")] string updateBranch,
-            [FromQuery(Name = "os")] OperatingSystem operatingSystem,
-            [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
-            [FromQuery(Name = "arch")] Architecture arch = Architecture.X64
-            )
+        public object GetChanges([FromRoute(Name = "branch")] string updateBranch,
+                                 [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                 [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
+                                 [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
             var updateFiles = GetUpdateFiles(updateBranch, operatingSystem, runtime, arch).Take(5);
 

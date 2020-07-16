@@ -5,10 +5,6 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using ServarrAPI.Database;
-using ServarrAPI.Database.Models;
-using ServarrAPI.Extensions;
-using ServarrAPI.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,15 +12,23 @@ using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Octokit;
+using ServarrAPI.Database;
+using ServarrAPI.Database.Models;
+using ServarrAPI.Extensions;
+using ServarrAPI.Util;
 
 namespace ServarrAPI.Release.Azure
 {
     public class AzureReleaseSource : ReleaseSourceBase
     {
         private const string PackageArtifactName = "Packages";
-        private readonly int[] BuildPipelines = new int[] { 1 };
+
+        private static readonly Regex ReleaseFeaturesGroup = new Regex(@"^New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
+        private static readonly Regex ReleaseFixesGroup = new Regex(@"^Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
 
         private static int? _lastBuildId;
+
+        private readonly int[] _buildPipelines = new int[] { 1 };
 
         private readonly Config _config;
         private readonly DatabaseContext _database;
@@ -33,10 +37,6 @@ namespace ServarrAPI.Release.Azure
         private readonly VssConnection _connection;
 
         private readonly ILogger<AzureReleaseSource> _logger;
-
-        private static readonly Regex ReleaseFeaturesGroup = new Regex(@"^New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
-
-        private static readonly Regex ReleaseFixesGroup = new Regex(@"^Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
 
         public AzureReleaseSource(DatabaseContext database,
                                   IOptions<Config> config,
@@ -58,7 +58,7 @@ namespace ServarrAPI.Release.Azure
 
             var buildClient = _connection.GetClient<BuildHttpClient>();
             var nightlyHistory = await buildClient.GetBuildsAsync(project: _config.Project,
-                                                                  definitions: BuildPipelines,
+                                                                  definitions: _buildPipelines,
                                                                   branchName: "refs/heads/develop",
                                                                   reasonFilter: BuildReason.IndividualCI | BuildReason.Manual,
                                                                   statusFilter: BuildStatus.Completed,
@@ -67,7 +67,7 @@ namespace ServarrAPI.Release.Azure
                                                                   top: 5);
 
             var branchHistory = await buildClient.GetBuildsAsync(project: _config.Project,
-                                                             definitions: BuildPipelines,
+                                                             definitions: _buildPipelines,
                                                              reasonFilter: BuildReason.PullRequest | BuildReason.Manual | BuildReason.IndividualCI,
                                                              statusFilter: BuildStatus.Completed,
                                                              resultFilter: BuildResult.Succeeded,
@@ -168,7 +168,7 @@ namespace ServarrAPI.Release.Azure
                     };
 
                     // Start tracking this object
-                    await _database.AddAsync(updateEntity);
+                    _ = await _database.AddAsync(updateEntity);
 
                     // Set new release to true.
                     hasNewRelease = true;
@@ -181,7 +181,7 @@ namespace ServarrAPI.Release.Azure
                 {
                     updateEntity.New.Clear();
 
-                    foreach (Match match in features.Where(x => x.Success))
+                    foreach (var match in features.Where(x => x.Success))
                     {
                         updateEntity.New.Add(match.Groups["text"].Value);
                     }
@@ -192,7 +192,7 @@ namespace ServarrAPI.Release.Azure
                 {
                     updateEntity.Fixed.Clear();
 
-                    foreach (Match match in fixes.Where(x => x.Success))
+                    foreach (var match in fixes.Where(x => x.Success))
                     {
                         updateEntity.Fixed.Add(match.Groups["text"].Value);
                     }
@@ -227,7 +227,10 @@ namespace ServarrAPI.Release.Azure
                             x.Runtime == runtime &&
                             x.Architecture == arch);
 
-                    if (updateFileEntity != null) continue;
+                    if (updateFileEntity != null)
+                    {
+                        continue;
+                    }
 
                     // Calculate the hash of the zip file.
                     var releaseFileName = Path.GetFileName(file.Path);
@@ -238,19 +241,15 @@ namespace ServarrAPI.Release.Azure
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
 
-                        using (var fileStream = File.OpenWrite(releaseZip))
-                        using (var artifactStream = await _httpClient.GetStreamAsync(file.Url))
-                        {
-                            await artifactStream.CopyToAsync(fileStream);
-                        }
+                        using var fileStream = File.OpenWrite(releaseZip);
+                        using var artifactStream = await _httpClient.GetStreamAsync(file.Url);
+                        await artifactStream.CopyToAsync(fileStream);
                     }
 
                     using (var stream = File.OpenRead(releaseZip))
                     {
-                        using (var sha = SHA256.Create())
-                        {
-                            releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
-                        }
+                        using var sha = SHA256.Create();
+                        releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
                     }
 
                     File.Delete(releaseZip);

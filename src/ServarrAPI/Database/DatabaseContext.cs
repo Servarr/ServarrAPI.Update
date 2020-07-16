@@ -1,11 +1,12 @@
-﻿using ServarrAPI.Database.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using ServarrAPI.Database.Models;
 
 namespace ServarrAPI.Database
 {
     public class DatabaseContext : DbContext
     {
-        public DatabaseContext(DbContextOptions options) : base(options)
+        public DatabaseContext(DbContextOptions options)
+        : base(options)
         {
         }
 
@@ -20,7 +21,7 @@ namespace ServarrAPI.Database
                 builder.HasKey(k => k.UpdateEntityId);
 
                 builder.Property(entity => entity.Version).IsRequired();
-                builder.HasIndex(i => new {i.Branch, i.Version}).IsUnique();
+                builder.HasIndex(i => new { i.Branch, i.Version }).IsUnique();
 
                 builder.HasMany(u => u.UpdateFiles)
                     .WithOne(u => u.Update)
@@ -28,10 +29,10 @@ namespace ServarrAPI.Database
                     .OnDelete(DeleteBehavior.Cascade)
                     .IsRequired();
             });
-            
+
             modelBuilder.Entity<UpdateFileEntity>(builder =>
             {
-                builder.HasKey(k => new {k.UpdateEntityId, k.OperatingSystem, k.Architecture, k.Runtime});
+                builder.HasKey(k => new { k.UpdateEntityId, k.OperatingSystem, k.Architecture, k.Runtime });
             });
         }
     }

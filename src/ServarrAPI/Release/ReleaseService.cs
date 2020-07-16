@@ -2,11 +2,9 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using ServarrAPI.Release.Azure;
 using ServarrAPI.Release.Github;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace ServarrAPI.Release
 {
@@ -43,7 +41,7 @@ namespace ServarrAPI.Release
 
                 if (obtainedLock)
                 {
-                    var releaseSourceInstance = (ReleaseSourceBase) _serviceProvider.GetRequiredService(releaseSource);
+                    var releaseSourceInstance = (ReleaseSourceBase)_serviceProvider.GetRequiredService(releaseSource);
 
                     await releaseSourceInstance.StartFetchReleasesAsync();
                 }

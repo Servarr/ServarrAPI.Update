@@ -66,7 +66,8 @@ namespace ServarrAPI.Release.Azure
 
     public static class AzureExtensions
     {
-        public static ArtifactHttpClient GetClient<T>(this VssConnection connection) where T : ArtifactHttpClient
+        public static ArtifactHttpClient GetClient<T>(this VssConnection connection)
+            where T : ArtifactHttpClient
         {
             return new ArtifactHttpClient(connection.Uri);
         }
