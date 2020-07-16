@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServarrAPI.Release
@@ -15,7 +16,7 @@ namespace ServarrAPI.Release
         /// </summary>
         private Semaphore FetchSemaphore { get; }
 
-        public async Task<bool> StartFetchReleasesAsync()
+        public async Task<List<string>> StartFetchReleasesAsync()
         {
             var hasLock = false;
 
@@ -36,9 +37,9 @@ namespace ServarrAPI.Release
                 }
             }
 
-            return false;
+            return new List<string>();
         }
 
-        protected abstract Task<bool> DoFetchReleasesAsync();
+        protected abstract Task<List<string>> DoFetchReleasesAsync();
     }
 }

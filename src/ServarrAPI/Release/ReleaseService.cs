@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using ServarrAPI.Cloudflare;
 using ServarrAPI.Release.Azure;
 using ServarrAPI.Release.Github;
 
@@ -13,6 +14,7 @@ namespace ServarrAPI.Release
         private static readonly ConcurrentDictionary<Type, SemaphoreSlim> ReleaseLocks;
 
         private readonly IServiceProvider _serviceProvider;
+        private readonly ICloudflareProxy _cloudflare;
 
         static ReleaseService()
         {
@@ -21,9 +23,11 @@ namespace ServarrAPI.Release
             ReleaseLocks.TryAdd(typeof(AzureReleaseSource), new SemaphoreSlim(1, 1));
         }
 
-        public ReleaseService(IServiceProvider serviceProvider)
+        public ReleaseService(IServiceProvider serviceProvider,
+                              ICloudflareProxy cloudflare)
         {
             _serviceProvider = serviceProvider;
+            _cloudflare = cloudflare;
         }
 
         public async Task UpdateReleasesAsync(Type releaseSource)
@@ -37,13 +41,14 @@ namespace ServarrAPI.Release
 
             try
             {
-                obtainedLock = await releaseLock.WaitAsync(TimeSpan.FromMinutes(5));
+                obtainedLock = await releaseLock.WaitAsync(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
 
                 if (obtainedLock)
                 {
                     var releaseSourceInstance = (ReleaseSourceBase)_serviceProvider.GetRequiredService(releaseSource);
 
-                    await releaseSourceInstance.StartFetchReleasesAsync();
+                    var updatedBranches = await releaseSourceInstance.StartFetchReleasesAsync().ConfigureAwait(false);
+                    await _cloudflare.InvalidateBranches(updatedBranches).ConfigureAwait(false);
                 }
             }
             finally
