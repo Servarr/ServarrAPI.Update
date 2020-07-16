@@ -22,7 +22,6 @@ namespace ServarrAPI.Model
         public async Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch)
         {
             var result = await Query(Builder()
-                                     .Join<UpdateFileEntity, UpdateEntity>((f, u) => f.UpdateId == u.Id)
                                      .Where<UpdateFileEntity>(f => f.OperatingSystem == os &&
                                                               f.Runtime == runtime &&
                                                               f.Architecture == arch)
@@ -36,7 +35,6 @@ namespace ServarrAPI.Model
             if (os == OperatingSystem.Linux)
             {
                 var result = await Query(Builder()
-                                         .Join<UpdateFileEntity, UpdateEntity>((f, u) => f.UpdateId == u.Id)
                                          .Where<UpdateFileEntity>(f => f.OperatingSystem == os &&
                                                                   f.Runtime == runtime &&
                                                                   f.Architecture == arch)
@@ -49,7 +47,6 @@ namespace ServarrAPI.Model
             else
             {
                 var result = await Query(Builder()
-                                         .Join<UpdateFileEntity, UpdateEntity>((f, u) => f.UpdateId == u.Id)
                                          .Where<UpdateFileEntity>(f => f.OperatingSystem == os)
                                          .Where<UpdateEntity>(u => u.Branch == branch)
                                          .OrderBy($"update.releasedate DESC LIMIT {count}"))
@@ -57,6 +54,23 @@ namespace ServarrAPI.Model
 
                 return result.ToList();
             }
+        }
+
+        protected override SqlBuilder Builder()
+        {
+            return new SqlBuilder()
+                .Join<UpdateFileEntity, UpdateEntity>((f, u) => f.UpdateId == u.Id);
+        }
+
+        protected override async Task<List<UpdateFileEntity>> Query(SqlBuilder builder)
+        {
+            var result = await _database.QueryJoined<UpdateFileEntity, UpdateEntity>(builder,
+                                                                                     (file, update) =>
+                                                                                     {
+                                                                                         file.Update = update;
+                                                                                         return file;
+                                                                                     });
+            return result.ToList();
         }
     }
 }
