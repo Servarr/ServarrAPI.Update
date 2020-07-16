@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -35,9 +36,9 @@ namespace ServarrAPI.Release.Github
             _httpClient = new HttpClient();
         }
 
-        protected override async Task<bool> DoFetchReleasesAsync()
+        protected override async Task<List<string>> DoFetchReleasesAsync()
         {
-            var hasNewRelease = false;
+            var updated = new HashSet<string>();
 
             var releases = (await _gitHubClient.Repository.Release.GetAll(_config.Project, _config.Project)).ToArray();
             var validReleases = releases
@@ -58,16 +59,19 @@ namespace ServarrAPI.Release.Github
                 // determine the branch
                 var branch = release.Assets.Any(a => a.Name.StartsWith(string.Format("{0}.master", _config.Project))) ? "master" : "develop";
 
-                hasNewRelease |= await ProcessRelease(release, branch, version);
+                if (await ProcessRelease(release, branch, version))
+                {
+                    updated.Add(branch);
+                }
 
                 // releases on master should also appear on develop
-                if (branch == "master")
+                if (branch == "master" && await ProcessRelease(release, "develop", version))
                 {
-                    hasNewRelease |= await ProcessRelease(release, "develop", version);
+                    updated.Add("develop");
                 }
             }
 
-            return hasNewRelease;
+            return updated.ToList();
         }
 
         private async Task<bool> ProcessRelease(Octokit.Release release, string branch, string version)
@@ -122,12 +126,6 @@ namespace ServarrAPI.Release.Github
 
             // Process release files.
             await Task.WhenAll(release.Assets.Select(x => ProcessAsset(x, branch, updateEntity.Id)));
-
-            /*
-            foreach (var releaseAsset in release.Assets)
-            {
-                await ProcessAsset(releaseAsset, branch, updateEntity.Id);
-            }*/
 
             return isNewRelease;
         }

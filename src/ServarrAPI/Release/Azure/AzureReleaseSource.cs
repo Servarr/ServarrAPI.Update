@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -53,9 +54,9 @@ namespace ServarrAPI.Release.Azure
             _logger = logger;
         }
 
-        protected override async Task<bool> DoFetchReleasesAsync()
+        protected override async Task<List<string>> DoFetchReleasesAsync()
         {
-            var hasNewRelease = false;
+            var updated = new HashSet<string>();
 
             var buildClient = _connection.GetClient<BuildHttpClient>();
             var nightlyHistory = await buildClient.GetBuildsAsync(project: _config.Project,
@@ -65,15 +66,15 @@ namespace ServarrAPI.Release.Azure
                                                                   statusFilter: BuildStatus.Completed,
                                                                   resultFilter: BuildResult.Succeeded,
                                                                   queryOrder: BuildQueryOrder.StartTimeDescending,
-                                                                  top: 5);
+                                                                  top: 5).ConfigureAwait(false);
 
             var branchHistory = await buildClient.GetBuildsAsync(project: _config.Project,
-                                                             definitions: _buildPipelines,
-                                                             reasonFilter: BuildReason.PullRequest | BuildReason.Manual | BuildReason.IndividualCI,
-                                                             statusFilter: BuildStatus.Completed,
-                                                             resultFilter: BuildResult.Succeeded,
-                                                             queryOrder: BuildQueryOrder.StartTimeDescending,
-                                                             top: 10);
+                                                                 definitions: _buildPipelines,
+                                                                 reasonFilter: BuildReason.PullRequest | BuildReason.Manual | BuildReason.IndividualCI,
+                                                                 statusFilter: BuildStatus.Completed,
+                                                                 resultFilter: BuildResult.Succeeded,
+                                                                 queryOrder: BuildQueryOrder.StartTimeDescending,
+                                                                 top: 10).ConfigureAwait(false);
 
             var history = nightlyHistory.Concat(branchHistory).DistinctBy(x => x.Id).OrderByDescending(x => x.Id);
 
@@ -105,7 +106,7 @@ namespace ServarrAPI.Release.Azure
                         continue;
                     }
 
-                    var pr = await _githubClient.PullRequest.Get(_config.Project, _config.Project, prNum);
+                    var pr = await _githubClient.PullRequest.Get(_config.Project, _config.Project, prNum).ConfigureAwait(false);
 
                     if (pr.Head.Repository.Fork)
                     {
@@ -140,7 +141,7 @@ namespace ServarrAPI.Release.Azure
                 var changesTask = buildClient.GetBuildChangesAsync(_config.Project, build.Id);
 
                 // Grab artifacts
-                var artifacts = await buildClient.GetArtifactsAsync(_config.Project, build.Id);
+                var artifacts = await buildClient.GetArtifactsAsync(_config.Project, build.Id).ConfigureAwait(false);
 
                 // there should be a single artifact called 'Packages' we parse for packages
                 var artifact = artifacts.FirstOrDefault(x => x.Name == PackageArtifactName);
@@ -150,7 +151,7 @@ namespace ServarrAPI.Release.Azure
                 }
 
                 var artifactClient = _connection.GetClient<ArtifactHttpClient>();
-                var files = await artifactClient.GetArtifactFiles(_config.Project, build.Id, artifact);
+                var files = await artifactClient.GetArtifactFiles(_config.Project, build.Id, artifact).ConfigureAwait(false);
 
                 // Get an updateEntity
                 var updateEntity = await _updateService.Find(build.BuildNumber, branch).ConfigureAwait(false);
@@ -168,11 +169,10 @@ namespace ServarrAPI.Release.Azure
                     Branch = branch
                 };
 
-                // Set new release to true.
-                hasNewRelease = true;
+                updated.Add(branch);
 
                 // Parse changes
-                var changes = await changesTask;
+                var changes = await changesTask.ConfigureAwait(false);
                 var features = changes.Select(x => ReleaseFeaturesGroup.Match(x.Message));
                 if (features.Any(x => x.Success))
                 {
@@ -207,7 +207,7 @@ namespace ServarrAPI.Release.Azure
                 }
             }
 
-            return hasNewRelease;
+            return updated.ToList();
         }
 
         private async Task ProcessFile(AzureFile file, string branch, int updateId)
@@ -240,8 +240,8 @@ namespace ServarrAPI.Release.Azure
                 Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
 
                 using var fileStream = File.OpenWrite(releaseZip);
-                using var artifactStream = await _httpClient.GetStreamAsync(file.Url);
-                await artifactStream.CopyToAsync(fileStream);
+                using var artifactStream = await _httpClient.GetStreamAsync(file.Url).ConfigureAwait(false);
+                await artifactStream.CopyToAsync(fileStream).ConfigureAwait(false);
             }
 
             using (var stream = File.OpenRead(releaseZip))

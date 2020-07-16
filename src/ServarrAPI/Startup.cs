@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Octokit;
 using Serilog;
+using ServarrAPI.Cloudflare;
 using ServarrAPI.Datastore;
 using ServarrAPI.Datastore.Migration.Framework;
 using ServarrAPI.Model;
@@ -60,6 +61,7 @@ namespace ServarrAPI
             services.AddSingleton<IUpdateService, UpdateService>();
             services.AddSingleton<IUpdateFileRepository, UpdateFileRepository>();
             services.AddSingleton<IUpdateFileService, UpdateFileService>();
+            services.AddSingleton<ICloudflareProxy, CloudflareProxy>();
 
             services.AddSingleton(new GitHubClient(new ProductHeaderValue("ServarrAPI")));
 
