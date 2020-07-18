@@ -14,6 +14,7 @@ using ServarrAPI.Model;
 using ServarrAPI.Release;
 using ServarrAPI.Release.Azure;
 using ServarrAPI.Release.Github;
+using ServarrAPI.TaskQueue;
 
 namespace ServarrAPI
 {
@@ -62,12 +63,14 @@ namespace ServarrAPI
             services.AddSingleton<IUpdateFileRepository, UpdateFileRepository>();
             services.AddSingleton<IUpdateFileService, UpdateFileService>();
             services.AddSingleton<ICloudflareProxy, CloudflareProxy>();
-
             services.AddSingleton(new GitHubClient(new ProductHeaderValue("ServarrAPI")));
+            services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 
             services.AddTransient<ReleaseService>();
             services.AddTransient<GithubReleaseSource>();
             services.AddTransient<AzureReleaseSource>();
+
+            services.AddHostedService<QueuedHostedService>();
 
             services
                 .AddControllers()

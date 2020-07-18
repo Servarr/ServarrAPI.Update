@@ -1,9 +1,11 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ServarrAPI.Release;
 using ServarrAPI.Release.Azure;
 using ServarrAPI.Release.Github;
+using ServarrAPI.TaskQueue;
 
 namespace ServarrAPI.Controllers
 {
@@ -11,18 +13,22 @@ namespace ServarrAPI.Controllers
     public class WebhookController
     {
         private readonly Config _config;
-        private readonly ReleaseService _releaseService;
+        private readonly IBackgroundTaskQueue _queue;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public WebhookController(ReleaseService releaseService, IOptions<Config> optionsConfig)
+        public WebhookController(IBackgroundTaskQueue queue,
+                                 IServiceScopeFactory serviceScopeFactory,
+                                 IOptions<Config> optionsConfig)
         {
-            _releaseService = releaseService;
+            _queue = queue;
+            _serviceScopeFactory = serviceScopeFactory;
             _config = optionsConfig.Value;
         }
 
         [Route("refresh")]
         [HttpGet]
         [HttpPost]
-        public async Task<string> Refresh([FromQuery] string source, [FromQuery(Name = "api_key")] string apiKey)
+        public string Refresh([FromQuery] string source, [FromQuery(Name = "api_key")] string apiKey)
         {
             if (!_config.ApiKey.Equals(apiKey))
             {
@@ -41,7 +47,14 @@ namespace ServarrAPI.Controllers
                 return $"Unknown source {source}";
             }
 
-            await _releaseService.UpdateReleasesAsync(type);
+            _queue.QueueBackgroundWorkItem(async token =>
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var scopedServices = scope.ServiceProvider;
+                var releaseService = scopedServices.GetRequiredService<ReleaseService>();
+
+                await releaseService.UpdateReleasesAsync(type);
+            });
 
             return "Thank you.";
         }
