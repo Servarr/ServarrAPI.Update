@@ -13,9 +13,11 @@ services:
     environment:
       - POSTGRES_USER=abc
       - POSTGRES_PASSWORD=abc
-      - POSTGRES_DB=lidarr
+      - POSTGRES_MULTIPLE_DATABASES=radarr,lidarr,readarr
+
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - ./pg-init-scripts:/docker-entrypoint-initdb.d
+      - postgres/:/var/lib/postgresql/data
 
   servarrupdate:
     build: .
@@ -27,9 +29,9 @@ services:
       - db
 
     environment:
-      - Servarr:DataDirectory=/data
-      - Servarr:ApiKey=
-      - Servarr:Project=Lidarr
+      - Update:DataDirectory=/data
+      - Update:ApiKey=
+      - Update:Project=Lidarr
       - ASPNETCORE_URLS=http://0.0.0.0:5000
 
     volumes:
