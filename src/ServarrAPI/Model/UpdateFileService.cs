@@ -31,24 +31,40 @@ namespace ServarrAPI.Model
 
         public Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch)
         {
+            runtime = SetRuntime(runtime);
+            arch = SetArch(runtime, arch);
+
             return _repo.Find(version, branch, os, runtime, arch);
         }
 
         public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count)
         {
+            runtime = SetRuntime(runtime);
+            arch = SetArch(runtime, arch);
+
+            return _repo.Find(branch, os, runtime, arch, count);
+        }
+
+        private Runtime SetRuntime(Runtime runtime)
+        {
             // Mono and Dotnet are equivalent for our purposes
             if (runtime == Runtime.Mono)
             {
-                runtime = Runtime.DotNet;
+                return Runtime.DotNet;
             }
 
+            return runtime;
+        }
+
+        private Architecture SetArch(Runtime runtime, Architecture arch)
+        {
             // If runtime is DotNet then default arch to x64
             if (runtime == Runtime.DotNet)
             {
-                arch = Architecture.X64;
+                return Architecture.X64;
             }
 
-            return _repo.Find(branch, os, runtime, arch, count);
+            return arch;
         }
     }
 }
