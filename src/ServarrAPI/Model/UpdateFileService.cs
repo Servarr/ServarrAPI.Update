@@ -33,6 +33,7 @@ namespace ServarrAPI.Model
         {
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch);
+            os = SetOs(runtime, os);
 
             return _repo.Find(version, branch, os, runtime, arch);
         }
@@ -41,6 +42,7 @@ namespace ServarrAPI.Model
         {
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch);
+            os = SetOs(runtime, os);
 
             return _repo.Find(branch, os, runtime, arch, count);
         }
@@ -65,6 +67,19 @@ namespace ServarrAPI.Model
             }
 
             return arch;
+        }
+
+        private OperatingSystem SetOs(Runtime runtime, OperatingSystem os)
+        {
+            // We only care about LinuxMusl and BSD for net core
+            if (runtime == Runtime.DotNet &&
+                (os == OperatingSystem.LinuxMusl ||
+                 os == OperatingSystem.Bsd))
+            {
+                return OperatingSystem.Linux;
+            }
+
+            return os;
         }
     }
 }

@@ -8,13 +8,17 @@ namespace ServarrAPI.Util
 {
     public static class Parser
     {
-        public static readonly Regex NetCoreAsset = new Regex(@"(linux|osx|windows)-core-(x64|arm|arm64)", RegexOptions.Compiled);
+        public static readonly Regex NetCoreAsset = new Regex(@"(bsd|linux|linux-musl|osx|windows)-core-(x64|arm|arm64)", RegexOptions.Compiled);
 
         public static readonly Regex WindowsAsset = new Regex(@"windows(-core-(x64|arm|arm64))?\.zip$", RegexOptions.Compiled);
 
         public static readonly Regex LinuxAsset = new Regex(@"linux(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
+        public static readonly Regex LinuxMuslAsset = new Regex(@"linux-musl(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
+
         public static readonly Regex OsxAsset = new Regex(@"osx(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
+
+        public static readonly Regex BsdAsset = new Regex(@"bsd(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
         public static readonly Regex ArchRegex = new Regex(@"core-(?<arch>x64|arm|arm64)\.", RegexOptions.Compiled);
 
@@ -27,6 +31,14 @@ namespace ServarrAPI.Util
             else if (LinuxAsset.IsMatch(file))
             {
                 return OperatingSystem.Linux;
+            }
+            else if (LinuxMuslAsset.IsMatch(file))
+            {
+                return OperatingSystem.LinuxMusl;
+            }
+            else if (BsdAsset.IsMatch(file))
+            {
+                return OperatingSystem.Bsd;
             }
             else if (OsxAsset.IsMatch(file))
             {
