@@ -32,7 +32,8 @@ namespace ServarrAPI.Model
 
         public async Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count)
         {
-            if (os == OperatingSystem.Linux)
+            if (os == OperatingSystem.Linux ||
+                os == OperatingSystem.LinuxMusl)
             {
                 var result = await Query(Builder()
                                          .Where<UpdateFileEntity>(f => f.OperatingSystem == os &&
