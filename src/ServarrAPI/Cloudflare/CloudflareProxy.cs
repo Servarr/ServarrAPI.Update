@@ -28,6 +28,7 @@ namespace ServarrAPI.Cloudflare
         private readonly CloudflareOptions _config;
 
         private readonly HttpClient _httpClient;
+        private readonly bool _enabled;
 
         public CloudflareProxy(IConfiguration config,
                                ILogger<CloudflareProxy> logger)
@@ -35,6 +36,12 @@ namespace ServarrAPI.Cloudflare
             _logger = logger;
             _config = new CloudflareOptions();
             config.GetSection("Cloudflare").Bind(_config);
+
+            if (string.IsNullOrWhiteSpace(_config.Email) ||
+                string.IsNullOrWhiteSpace(_config.Key))
+            {
+                return;
+            }
 
             var handler = new HttpClientHandler
             {
@@ -45,10 +52,17 @@ namespace ServarrAPI.Cloudflare
             _httpClient = new HttpClient(handler);
             _httpClient.DefaultRequestHeaders.Add("X-Auth-Email", _config.Email);
             _httpClient.DefaultRequestHeaders.Add("X-Auth-Key", _config.Key);
+
+            _enabled = true;
         }
 
         public async Task InvalidateBranches(IEnumerable<string> branches)
         {
+            if (!_enabled)
+            {
+                return;
+            }
+
             var page = 0;
             var paged = GetPage(branches, page);
 
