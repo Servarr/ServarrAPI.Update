@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -110,10 +110,12 @@ namespace ServarrAPI.Release.Azure
 
                     if (pr.Head.Repository.Fork)
                     {
-                        continue;
+                        branch = string.Format("pr{0}", pr.Number);
                     }
-
-                    branch = pr.Head.Ref;
+                    else
+                    {
+                        branch = pr.Head.Ref;
+                    }
                 }
                 else
                 {
