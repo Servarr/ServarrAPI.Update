@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Octokit;
+using ServarrAPI.Extensions;
 using ServarrAPI.Model;
 using ServarrAPI.Util;
 
@@ -86,10 +87,13 @@ namespace ServarrAPI.Release.Github
                 return isNewRelease;
             }
 
+            var parsedVersion = Version.Parse(version);
+
             // Create update object
             updateEntity = new UpdateEntity
             {
                 Version = version,
+                IntVersion = parsedVersion.ToIntVersion(),
                 ReleaseDate = release.PublishedAt.Value.UtcDateTime,
                 Branch = branch
             };

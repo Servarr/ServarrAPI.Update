@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,13 +23,14 @@ namespace ServarrAPI.Controllers.Update
         [Route("{branch}/changes")]
         [HttpGet]
         public async Task<object> GetChanges([FromRoute(Name = "branch")] string updateBranch,
+                                             [FromQuery(Name = "version")] string urlVersion,
                                              [FromQuery(Name = "os")] OperatingSystem operatingSystem,
                                              [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
                                              [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
             Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow.AddDays(30));
 
-            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5);
+            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5, urlVersion);
 
             var response = new List<UpdatePackage>();
 
@@ -81,7 +82,8 @@ namespace ServarrAPI.Controllers.Update
                 };
             }
 
-            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5);
+            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1, urlVersion);
+
             var updateFile = files.FirstOrDefault();
 
             if (updateFile == null)
