@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -161,10 +161,13 @@ namespace ServarrAPI.Release.Azure
                     continue;
                 }
 
+                var version = Version.Parse(build.BuildNumber);
+
                 // Create update object
                 updateEntity = new UpdateEntity
                 {
                     Version = build.BuildNumber,
+                    IntVersion = version.ToIntVersion(),
                     ReleaseDate = build.StartTime.Value,
                     Branch = branch
                 };

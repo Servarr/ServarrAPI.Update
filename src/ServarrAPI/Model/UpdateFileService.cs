@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ServarrAPI.Model
 {
@@ -9,19 +12,22 @@ namespace ServarrAPI.Model
     {
         Task<UpdateFileEntity> Insert(UpdateFileEntity model);
         Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch);
-        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count);
+        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, string installedVersion = null);
     }
 
     public class UpdateFileService : IUpdateFileService
     {
         private readonly ILogger _logger;
         private readonly IUpdateFileRepository _repo;
+        private readonly Config _config;
 
         public UpdateFileService(IUpdateFileRepository repo,
-                                 ILogger<IUpdateFileService> logger)
+                                 ILogger<IUpdateFileService> logger,
+                                 IOptions<Config> optionsConfig)
         {
             _repo = repo;
             _logger = logger;
+            _config = optionsConfig.Value;
         }
 
         public Task<UpdateFileEntity> Insert(UpdateFileEntity model)
@@ -38,13 +44,14 @@ namespace ServarrAPI.Model
             return _repo.Find(version, branch, os, runtime, arch);
         }
 
-        public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count)
+        public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, string installedVersion = null)
         {
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch);
             os = SetOs(runtime, os);
+            var maxVersion = GetMaxVersion(installedVersion);
 
-            return _repo.Find(branch, os, runtime, arch, count);
+            return _repo.Find(branch, os, runtime, arch, count, maxVersion);
         }
 
         private Runtime SetRuntime(Runtime runtime)
@@ -80,6 +87,19 @@ namespace ServarrAPI.Model
             }
 
             return os;
+        }
+
+        private Version GetMaxVersion(string currentVersion)
+        {
+            if (!string.IsNullOrWhiteSpace(currentVersion))
+            {
+                var installedVersion = new Version(currentVersion);
+                return _config.VersionGates.OrderBy(x => x.MaxVersion).FirstOrDefault(x => installedVersion <= x.MaxVersion)?.MaxUpgradeVersion;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

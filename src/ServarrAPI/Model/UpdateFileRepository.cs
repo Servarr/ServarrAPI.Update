@@ -1,15 +1,17 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using ServarrAPI.Datastore;
+using ServarrAPI.Extensions;
 
 namespace ServarrAPI.Model
 {
     public interface IUpdateFileRepository : IBasicRepository<UpdateFileEntity>
     {
         Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch);
-        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count);
+        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, Version maxVersion);
     }
 
     public class UpdateFileRepository : BasicRepository<UpdateFileEntity>, IUpdateFileRepository
@@ -26,35 +28,30 @@ namespace ServarrAPI.Model
                                                               f.Runtime == runtime &&
                                                               f.Architecture == arch)
                                      .Where<UpdateEntity>(u => u.Branch == branch &&
-                                                          u.Version == version));
+                                                               u.Version == version));
             return result.FirstOrDefault();
         }
 
-        public async Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count)
+        public async Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, Version maxVersion)
         {
+            var builder = Builder().Where<UpdateFileEntity>(f => f.OperatingSystem == os);
+
             if (os == OperatingSystem.Linux ||
                 os == OperatingSystem.LinuxMusl)
             {
-                var result = await Query(Builder()
-                                         .Where<UpdateFileEntity>(f => f.OperatingSystem == os &&
-                                                                  f.Runtime == runtime &&
-                                                                  f.Architecture == arch)
-                                         .Where<UpdateEntity>(u => u.Branch == branch)
-                                         .OrderBy($"update.releasedate DESC LIMIT {count}"))
-                    .ConfigureAwait(false);
-
-                return result.ToList();
+                builder.Where<UpdateFileEntity>(f => f.Runtime == runtime && f.Architecture == arch);
             }
-            else
+
+            if (maxVersion != null)
             {
-                var result = await Query(Builder()
-                                         .Where<UpdateFileEntity>(f => f.OperatingSystem == os)
-                                         .Where<UpdateEntity>(u => u.Branch == branch)
-                                         .OrderBy($"update.releasedate DESC LIMIT {count}"))
-                    .ConfigureAwait(false);
-
-                return result.ToList();
+                var maxVersionInt = maxVersion.ToIntVersion();
+                builder.Where<UpdateEntity>(u => u.IntVersion <= maxVersionInt);
             }
+
+            var result = await Query(builder.Where<UpdateEntity>(u => u.Branch == branch).OrderBy($"update.intversion DESC LIMIT {count}"))
+                .ConfigureAwait(false);
+
+            return result.ToList();
         }
 
         protected override SqlBuilder Builder()
