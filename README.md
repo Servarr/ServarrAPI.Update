@@ -1,6 +1,6 @@
 # Servarr Update Server
 
-[![Build Status](https://dev.azure.com/Servarr/Servarr/_apis/build/status/Servarr.API.Update?branchName=master)](https://dev.azure.com/Servarr/Servarr/_build/latest?definitionId=2&branchName=master)
+[![Build Status](https://dev.azure.com/Servarr/Servarr/_apis/build/status/Servarr.ServarrAPI.Update?branchName=master)](https://dev.azure.com/Servarr/Servarr/_build/latest?definitionId=5&branchName=master)
 
 This is the update API of Lidarr, Radarr, and Readarr.
 
