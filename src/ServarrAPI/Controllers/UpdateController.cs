@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using InfluxDB.Collector;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Net.Http.Headers;
+using Microsoft.Extensions.Options;
 using ServarrAPI.Model;
 using Architecture = System.Runtime.InteropServices.Architecture;
 using OperatingSystem = ServarrAPI.Model.OperatingSystem;
@@ -14,10 +15,12 @@ namespace ServarrAPI.Controllers.Update
     public class UpdateController : Controller
     {
         private readonly IUpdateFileService _updateFileService;
+        private readonly string _project;
 
-        public UpdateController(IUpdateFileService updateFileService)
+        public UpdateController(IUpdateFileService updateFileService, IOptions<Config> config)
         {
             _updateFileService = updateFileService;
+            _project = config.Value.Project;
         }
 
         [Route("{branch}/changes")]
@@ -28,8 +31,6 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
                                              [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
-            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow.AddDays(30));
-
             var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5, urlVersion);
 
             var response = new List<UpdatePackage>();
@@ -69,10 +70,9 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "version")] string urlVersion,
                                              [FromQuery(Name = "os")] OperatingSystem operatingSystem,
                                              [FromQuery(Name = "runtime")] Runtime runtime,
-                                             [FromQuery(Name = "arch")] Architecture arch)
+                                             [FromQuery(Name = "arch")] Architecture arch,
+                                             [FromQuery(Name = "active")] bool activeInstall = true)
         {
-            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow.AddDays(30));
-
             // Check given version
             if (!Version.TryParse(urlVersion, out var version))
             {
@@ -81,6 +81,24 @@ namespace ServarrAPI.Controllers.Update
                     ErrorMessage = "Invalid version number specified."
                 };
             }
+
+            var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
+
+            Metrics.Write("userstats",
+                new Dictionary<string, object>
+                {
+                                    { "source", remoteIpAddress }
+                },
+                new Dictionary<string, string>
+                {
+                                    { "program", _project },
+                                    { "branch", updateBranch },
+                                    { "version", urlVersion },
+                                    { "os", operatingSystem.ToString() },
+                                    { "runtime", runtime.ToString() },
+                                    { "arch", arch.ToString() },
+                                    { "activeinstall", activeInstall.ToString() }
+                });
 
             var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1, urlVersion);
 
@@ -143,8 +161,6 @@ namespace ServarrAPI.Controllers.Update
                                                 [FromQuery(Name = "runtime")] Runtime runtime,
                                                 [FromQuery(Name = "arch")] Architecture arch)
         {
-            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow.AddDays(30));
-
             UpdateFileEntity updateFile;
 
             if (urlVersion != null)
@@ -174,14 +190,6 @@ namespace ServarrAPI.Controllers.Update
             }
 
             return RedirectPermanent(updateFile.Url);
-        }
-
-        private string GetCacheControlHeader(DateTime expiry)
-        {
-            var now = DateTime.UtcNow;
-            var maxage = (int)(expiry - now).TotalSeconds;
-
-            return $"public,s-maxage={maxage},max-age=0";
         }
     }
 }
