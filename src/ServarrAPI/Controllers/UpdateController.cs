@@ -29,27 +29,8 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "version")] string urlVersion,
                                              [FromQuery(Name = "os")] OperatingSystem operatingSystem,
                                              [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
-                                             [FromQuery(Name = "arch")] Architecture arch = Architecture.X64,
-                                             [FromQuery(Name = "active")] bool activeInstall = true)
+                                             [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
-            var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
-
-            Metrics.Write("userstats",
-                new Dictionary<string, object>
-                {
-                                    { "source", remoteIpAddress }
-                },
-                new Dictionary<string, string>
-                {
-                                    { "program", _project },
-                                    { "branch", updateBranch },
-                                    { "version", urlVersion },
-                                    { "os", operatingSystem.ToString() },
-                                    { "runtime", runtime.ToString() },
-                                    { "arch", arch.ToString() },
-                                    { "activeinstall", activeInstall.ToString() }
-                });
-
             var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5, urlVersion);
 
             var response = new List<UpdatePackage>();
@@ -89,7 +70,8 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "version")] string urlVersion,
                                              [FromQuery(Name = "os")] OperatingSystem operatingSystem,
                                              [FromQuery(Name = "runtime")] Runtime runtime,
-                                             [FromQuery(Name = "arch")] Architecture arch)
+                                             [FromQuery(Name = "arch")] Architecture arch,
+                                             [FromQuery(Name = "active")] bool activeInstall = true)
         {
             // Check given version
             if (!Version.TryParse(urlVersion, out var version))
@@ -99,6 +81,24 @@ namespace ServarrAPI.Controllers.Update
                     ErrorMessage = "Invalid version number specified."
                 };
             }
+
+            var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
+
+            Metrics.Write("userstats",
+                new Dictionary<string, object>
+                {
+                                    { "source", remoteIpAddress }
+                },
+                new Dictionary<string, string>
+                {
+                                    { "program", _project },
+                                    { "branch", updateBranch },
+                                    { "version", urlVersion },
+                                    { "os", operatingSystem.ToString() },
+                                    { "runtime", runtime.ToString() },
+                                    { "arch", arch.ToString() },
+                                    { "activeinstall", activeInstall.ToString() }
+                });
 
             var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1, urlVersion);
 
