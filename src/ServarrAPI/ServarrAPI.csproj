@@ -8,6 +8,7 @@
     <Folder Include="wwwroot\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="InfluxDB.Collector" Version="1.1.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="3.2.0" />
     <PackageReference Include="Sentry.AspNetCore" Version="2.1.1" />
     <PackageReference Include="Sentry.Serilog" Version="2.1.1" />

@@ -1,5 +1,7 @@
-﻿using System;
+using System;
+using System.Configuration;
 using System.IO;
+using InfluxDB.Collector;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -45,6 +47,8 @@ namespace ServarrAPI
             APIKey         : {ConfigServarr.ApiKey}");
 
             SetupDataDirectory();
+
+            SetupTelegraf();
         }
 
         public IConfiguration Config { get; }
@@ -109,6 +113,23 @@ namespace ServarrAPI
 
             // Create
             Directory.CreateDirectory(ConfigServarr.DataDirectory);
+        }
+
+        private void SetupTelegraf()
+        {
+            var server = Config.GetSection("Stats")["Server"];
+            var port = Config.GetSection("Stats").GetValue<int>("Port");
+
+            if (string.IsNullOrWhiteSpace(server) || port == 0)
+            {
+                return;
+            }
+
+            Metrics.Collector = new CollectorConfiguration()
+                .Tag.With("application_path", Environment.GetEnvironmentVariable("SERVICE_HOSTNAME"))
+                .Batch.AtInterval(TimeSpan.FromSeconds(2))
+                .WriteTo.InfluxDB(string.Format("http://{0}:{1}", server, port), "telegraf")
+                .CreateCollector();
         }
     }
 }
