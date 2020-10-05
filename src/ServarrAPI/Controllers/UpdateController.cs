@@ -82,23 +82,27 @@ namespace ServarrAPI.Controllers.Update
                 };
             }
 
-            var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
+            // Dont' send metrics for dev/debug instances
+            if (version.Major < 10)
+            {
+                var remoteIpAddress = Request.HttpContext.Connection.RemoteIpAddress;
 
-            Metrics.Write("userstats",
-                new Dictionary<string, object>
-                {
-                                    { "source", remoteIpAddress }
-                },
-                new Dictionary<string, string>
-                {
-                                    { "program", _project },
-                                    { "branch", updateBranch },
-                                    { "version", urlVersion },
-                                    { "os", operatingSystem.ToString() },
-                                    { "runtime", runtime.ToString() },
-                                    { "arch", arch.ToString() },
-                                    { "activeinstall", activeInstall.ToString() }
-                });
+                Metrics.Write("userstats",
+                    new Dictionary<string, object>
+                    {
+                        { "source", remoteIpAddress }
+                    },
+                    new Dictionary<string, string>
+                    {
+                        { "program", _project },
+                        { "branch", updateBranch },
+                        { "version", urlVersion },
+                        { "os", operatingSystem.ToString() },
+                        { "runtime", runtime.ToString() },
+                        { "arch", arch.ToString() },
+                        { "activeinstall", activeInstall.ToString() }
+                    });
+            }
 
             var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1, urlVersion);
 
