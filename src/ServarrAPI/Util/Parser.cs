@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ServarrAPI.Model;
@@ -8,9 +8,9 @@ namespace ServarrAPI.Util
 {
     public static class Parser
     {
-        public static readonly Regex NetCoreAsset = new Regex(@"(bsd|linux|linux-musl|osx|windows)-core-(x64|arm|arm64)", RegexOptions.Compiled);
+        public static readonly Regex NetCoreAsset = new Regex(@"(bsd|linux|linux-musl|osx|windows)-core-(x86|x64|arm|arm64)", RegexOptions.Compiled);
 
-        public static readonly Regex WindowsAsset = new Regex(@"windows(-core-(x64|arm|arm64))?\.zip$", RegexOptions.Compiled);
+        public static readonly Regex WindowsAsset = new Regex(@"windows(-core-(x86|x64|arm|arm64))?\.zip$", RegexOptions.Compiled);
 
         public static readonly Regex LinuxAsset = new Regex(@"linux(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
@@ -20,7 +20,7 @@ namespace ServarrAPI.Util
 
         public static readonly Regex BsdAsset = new Regex(@"bsd(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
-        public static readonly Regex ArchRegex = new Regex(@"core-(?<arch>x64|arm|arm64)\.", RegexOptions.Compiled);
+        public static readonly Regex ArchRegex = new Regex(@"core-(?<arch>x86|x64|arm|arm64)\.", RegexOptions.Compiled);
 
         public static OperatingSystem? ParseOS(string file)
         {

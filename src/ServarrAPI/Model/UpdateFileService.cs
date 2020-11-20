@@ -38,7 +38,7 @@ namespace ServarrAPI.Model
         public Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch)
         {
             runtime = SetRuntime(runtime);
-            arch = SetArch(runtime, arch);
+            arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
 
             return _repo.Find(version, branch, os, runtime, arch);
@@ -47,7 +47,7 @@ namespace ServarrAPI.Model
         public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, string installedVersion = null)
         {
             runtime = SetRuntime(runtime);
-            arch = SetArch(runtime, arch);
+            arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
             var maxVersion = GetMaxVersion(installedVersion);
 
@@ -65,11 +65,16 @@ namespace ServarrAPI.Model
             return runtime;
         }
 
-        private Architecture SetArch(Runtime runtime, Architecture arch)
+        private Architecture SetArch(Runtime runtime, Architecture arch, OperatingSystem os)
         {
-            // If runtime is DotNet then default arch to x64
+            // If runtime is DotNet then default arch to x64 (or x86 for Windows given we build both)
             if (runtime == Runtime.DotNet)
             {
+                if (os == OperatingSystem.Windows)
+                {
+                    return Architecture.X86;
+                }
+
                 return Architecture.X64;
             }
 

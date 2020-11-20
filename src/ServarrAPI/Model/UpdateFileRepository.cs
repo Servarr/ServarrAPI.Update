@@ -41,6 +41,10 @@ namespace ServarrAPI.Model
             {
                 builder.Where<UpdateFileEntity>(f => f.Runtime == runtime && f.Architecture == arch);
             }
+            else if (os == OperatingSystem.Windows)
+            {
+                builder.Where<UpdateFileEntity>(f => f.Architecture == arch);
+            }
 
             if (maxVersion != null)
             {
