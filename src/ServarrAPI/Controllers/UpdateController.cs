@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using InfluxDB.Collector;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 using ServarrAPI.Model;
 using Architecture = System.Runtime.InteropServices.Architecture;
 using OperatingSystem = ServarrAPI.Model.OperatingSystem;
@@ -31,6 +32,8 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
                                              [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
+            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
+
             var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5, urlVersion);
 
             var response = new List<UpdatePackage>();
@@ -73,6 +76,8 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "arch")] Architecture arch,
                                              [FromQuery(Name = "active")] bool activeInstall = true)
         {
+            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
+
             // Check given version
             if (!Version.TryParse(urlVersion, out var version))
             {
@@ -165,6 +170,8 @@ namespace ServarrAPI.Controllers.Update
                                                 [FromQuery(Name = "runtime")] Runtime runtime,
                                                 [FromQuery(Name = "arch")] Architecture arch)
         {
+            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
+
             UpdateFileEntity updateFile;
 
             if (urlVersion != null)
@@ -194,6 +201,14 @@ namespace ServarrAPI.Controllers.Update
             }
 
             return RedirectPermanent(updateFile.Url);
+        }
+
+        private string GetCacheControlHeader(DateTime expiry)
+        {
+            var now = DateTime.UtcNow;
+            var maxage = (int)(expiry - now).TotalSeconds;
+
+            return $"public,s-maxage={maxage},max-age=0";
         }
     }
 }
