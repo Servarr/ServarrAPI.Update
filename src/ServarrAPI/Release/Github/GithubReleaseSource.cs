@@ -144,6 +144,7 @@ namespace ServarrAPI.Release.Github
 
             var runtime = Parser.ParseRuntime(releaseAsset.Name);
             var arch = Parser.ParseArchitecture(releaseAsset.Name);
+            var installer = Parser.ParseInstaller(releaseAsset.Name);
 
             // Calculate the hash of the zip file.
             var releaseZip = Path.Combine(_config.DataDirectory, branch.ToString().ToLower(), releaseAsset.Name);
@@ -175,7 +176,8 @@ namespace ServarrAPI.Release.Github
                 Runtime = runtime,
                 Filename = releaseAsset.Name,
                 Url = releaseAsset.BrowserDownloadUrl,
-                Hash = releaseHash
+                Hash = releaseHash,
+                Installer = installer
             };
 
             await _updateFileService.Insert(updateFile).ConfigureAwait(false);

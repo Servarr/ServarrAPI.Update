@@ -11,8 +11,8 @@ namespace ServarrAPI.Model
     public interface IUpdateFileService
     {
         Task<UpdateFileEntity> Insert(UpdateFileEntity model);
-        Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch);
-        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, string installedVersion = null);
+        Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer);
+        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null);
     }
 
     public class UpdateFileService : IUpdateFileService
@@ -35,23 +35,23 @@ namespace ServarrAPI.Model
             return _repo.Insert(model);
         }
 
-        public Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch)
+        public Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer)
         {
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
 
-            return _repo.Find(version, branch, os, runtime, arch);
+            return _repo.Find(version, branch, os, runtime, arch, installer);
         }
 
-        public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, int count, string installedVersion = null)
+        public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null)
         {
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
             var maxVersion = GetMaxVersion(installedVersion);
 
-            return _repo.Find(branch, os, runtime, arch, count, maxVersion);
+            return _repo.Find(branch, os, runtime, arch, installer, count, maxVersion);
         }
 
         private Runtime SetRuntime(Runtime runtime)

@@ -20,7 +20,7 @@ namespace ServarrAPI.Release.Azure
 {
     public class AzureReleaseSource : ReleaseSourceBase
     {
-        private const string PackageArtifactName = "Packages";
+        private readonly string[] _packageArtifactNames = { "Packages", "WindowsInstaller" };
 
         private static readonly Regex ReleaseFeaturesGroup = new Regex(@"^New:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
         private static readonly Regex ReleaseFixesGroup = new Regex(@"^Fixed:\s*(?<text>.*?)\r*$", RegexOptions.Compiled);
@@ -144,14 +144,19 @@ namespace ServarrAPI.Release.Azure
                 var artifacts = await buildClient.GetArtifactsAsync(_config.Project, build.Id).ConfigureAwait(false);
 
                 // there should be a single artifact called 'Packages' we parse for packages
-                var artifact = artifacts.FirstOrDefault(x => x.Name == PackageArtifactName);
-                if (artifact == null)
+                var packageArtifacts = artifacts.Where(x => _packageArtifactNames.Contains(x.Name));
+                if (packageArtifacts == null || !packageArtifacts.Any())
                 {
                     continue;
                 }
 
                 var artifactClient = _connection.GetClient<ArtifactHttpClient>();
-                var files = await artifactClient.GetArtifactFiles(_config.Project, build.Id, artifact).ConfigureAwait(false);
+                var files = new List<AzureFile>();
+
+                foreach (var artifact in packageArtifacts)
+                {
+                    files.AddRange(await artifactClient.GetArtifactFiles(_config.Project, build.Id, artifact).ConfigureAwait(false));
+                }
 
                 // Get an updateEntity
                 var updateEntity = await _updateService.Find(build.BuildNumber, branch).ConfigureAwait(false);
@@ -233,6 +238,9 @@ namespace ServarrAPI.Release.Azure
             var arch = Parser.ParseArchitecture(file.Path);
             _logger.LogDebug("Got arch {0}", arch);
 
+            var installer = Parser.ParseInstaller(file.Path);
+            _logger.LogDebug("Got installer {0}", installer);
+
             // Calculate the hash of the zip file.
             var releaseFileName = Path.GetFileName(file.Path);
             var releaseZip = Path.Combine(_config.DataDirectory, branch, releaseFileName);
@@ -264,7 +272,8 @@ namespace ServarrAPI.Release.Azure
                 Runtime = runtime,
                 Filename = releaseFileName,
                 Url = file.Url,
-                Hash = releaseHash
+                Hash = releaseHash,
+                Installer = installer
             };
 
             await _updateFileService.Insert(updateFile).ConfigureAwait(false);
