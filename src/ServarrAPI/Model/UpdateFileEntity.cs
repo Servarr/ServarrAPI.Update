@@ -1,4 +1,4 @@
-﻿using ServarrAPI.Datastore;
+using ServarrAPI.Datastore;
 
 namespace ServarrAPI.Model
 {
@@ -11,6 +11,7 @@ namespace ServarrAPI.Model
         public string Filename { get; set; }
         public string Url { get; set; }
         public string Hash { get; set; }
+        public bool Installer { get; set; }
 
         public LazyLoaded<UpdateEntity> Update { get; set; }
     }

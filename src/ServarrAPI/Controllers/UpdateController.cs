@@ -34,7 +34,7 @@ namespace ServarrAPI.Controllers.Update
         {
             Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
 
-            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 5, urlVersion);
+            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 5, urlVersion);
 
             var response = new List<UpdatePackage>();
 
@@ -109,7 +109,7 @@ namespace ServarrAPI.Controllers.Update
                     });
             }
 
-            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1, urlVersion);
+            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 1, urlVersion);
 
             var updateFile = files.FirstOrDefault();
 
@@ -168,7 +168,8 @@ namespace ServarrAPI.Controllers.Update
                                                 [FromQuery(Name = "version")] string urlVersion,
                                                 [FromQuery(Name = "os")] OperatingSystem operatingSystem,
                                                 [FromQuery(Name = "runtime")] Runtime runtime,
-                                                [FromQuery(Name = "arch")] Architecture arch)
+                                                [FromQuery(Name = "arch")] Architecture arch,
+                                                [FromQuery(Name = "installer")] bool installer = false)
         {
             Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
 
@@ -184,11 +185,11 @@ namespace ServarrAPI.Controllers.Update
                     };
                 }
 
-                updateFile = await _updateFileService.Find(urlVersion, updateBranch, operatingSystem, runtime, arch);
+                updateFile = await _updateFileService.Find(urlVersion, updateBranch, operatingSystem, runtime, arch, installer);
             }
             else
             {
-                var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, 1);
+                var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, installer, 1);
                 updateFile = updateFiles.FirstOrDefault();
             }
 

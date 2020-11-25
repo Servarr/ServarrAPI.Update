@@ -10,17 +10,19 @@ namespace ServarrAPI.Util
     {
         public static readonly Regex NetCoreAsset = new Regex(@"(bsd|linux|linux-musl|osx|windows)-core-(x86|x64|arm|arm64)", RegexOptions.Compiled);
 
-        public static readonly Regex WindowsAsset = new Regex(@"windows(-core-(x86|x64|arm|arm64))?\.zip$", RegexOptions.Compiled);
+        public static readonly Regex WindowsAsset = new Regex(@"(windows(-core-(x86|x64|arm|arm64))?\.zip|installer.exe)$", RegexOptions.Compiled);
 
         public static readonly Regex LinuxAsset = new Regex(@"linux(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
         public static readonly Regex LinuxMuslAsset = new Regex(@"linux-musl(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
-        public static readonly Regex OsxAsset = new Regex(@"osx(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
+        public static readonly Regex OsxAsset = new Regex(@"osx(-app)?(-core-(x64|arm|arm64))?\.(tar.gz|zip)$", RegexOptions.Compiled);
 
         public static readonly Regex BsdAsset = new Regex(@"bsd(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
-        public static readonly Regex ArchRegex = new Regex(@"core-(?<arch>x86|x64|arm|arm64)\.", RegexOptions.Compiled);
+        public static readonly Regex ArchRegex = new Regex(@"core-(?<arch>x86|x64|arm|arm64)(-installer)?\.", RegexOptions.Compiled);
+
+        public static readonly Regex InstallerRegex = new Regex(@"installer\.exe|osx-app", RegexOptions.Compiled);
 
         public static OperatingSystem? ParseOS(string file)
         {
@@ -51,6 +53,11 @@ namespace ServarrAPI.Util
         public static Runtime ParseRuntime(string file)
         {
             return NetCoreAsset.IsMatch(file) ? Runtime.NetCore : Runtime.DotNet;
+        }
+
+        public static bool ParseInstaller(string file)
+        {
+            return InstallerRegex.IsMatch(file);
         }
 
         public static Architecture ParseArchitecture(string file)
