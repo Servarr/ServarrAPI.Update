@@ -6,7 +6,7 @@ This is the update API of Lidarr, Radarr, and Readarr.
 
 ## Development
 
-If you want to work on **ServarrAPI.Update**, make sure you have [.NET Core 3.0 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.0) installed and [Visual Studio 2019 v16.3](https://www.visualstudio.com/vs).
+If you want to work on **ServarrAPI.Update**, make sure you have [.NET 5.0 SDK](https://dotnet.microsoft.com/download/dotnet/5.0) installed and [Visual Studio 2019 v16.8](https://www.visualstudio.com/vs).
 
 ## Using Docker
 

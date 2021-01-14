@@ -65,9 +65,9 @@ stages:
         vmImage: windows-2019
       steps:
       - task: UseDotNet@2
-        displayName: 'Install .net core 3.1'
+        displayName: 'Install .net 5.0'
         inputs:
-          version: '3.1.301'
+          version: '5.0.102'
       - task: SonarCloudPrepare@1
         displayName: 'Prepare SonarCloud'
         inputs:
