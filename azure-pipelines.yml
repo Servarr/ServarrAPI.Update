@@ -33,13 +33,14 @@ stages:
       - task: Docker@2
         displayName: Build image
         inputs:
-          containerRegistry: 'dockerhub'
+          containerRegistry: 'ghcr'
           repository: $(imageName)
           command: buildAndPush
           Dockerfile: Dockerfile
           tags: |
             latest
             $(Build.SourceBranchName)
+            $(Build.BuildNumber)
       - bash: |
           echo "Creating sentry release"
           curl -sL https://sentry.io/get-cli/ | bash
