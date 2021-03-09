@@ -15,5 +15,6 @@ namespace ServarrAPI
         public string Project { get; set; }
         public bool LogSql { get; set; }
         public List<VersionGate> VersionGates { get; set; }
+        public Dictionary<string, string> BranchRedirects { get; set; }
     }
 }
