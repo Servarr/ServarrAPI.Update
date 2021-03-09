@@ -40,8 +40,9 @@ namespace ServarrAPI.Model
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
+            var mappedBranch = GetMappedBranch(branch);
 
-            return _repo.Find(version, branch, os, runtime, arch, installer);
+            return _repo.Find(version, mappedBranch, os, runtime, arch, installer);
         }
 
         public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null)
@@ -50,8 +51,9 @@ namespace ServarrAPI.Model
             arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
             var maxVersion = GetMaxVersion(installedVersion);
+            var mappedBranch = GetMappedBranch(branch);
 
-            return _repo.Find(branch, os, runtime, arch, installer, count, maxVersion);
+            return _repo.Find(mappedBranch, os, runtime, arch, installer, count, maxVersion);
         }
 
         private Runtime SetRuntime(Runtime runtime)
@@ -105,6 +107,18 @@ namespace ServarrAPI.Model
             {
                 return null;
             }
+        }
+
+        private string GetMappedBranch(string branch)
+        {
+            var branchRedirects = _config.BranchRedirects;
+
+            if (branchRedirects.TryGetValue(branch.ToLowerInvariant(), out var mappedBranch))
+            {
+                return mappedBranch;
+            }
+
+            return branch;
         }
     }
 }
