@@ -29,12 +29,13 @@ namespace ServarrAPI.Controllers.Update
         public async Task<object> GetChanges([FromRoute(Name = "branch")] string updateBranch,
                                              [FromQuery(Name = "version")] string urlVersion,
                                              [FromQuery(Name = "os")] OperatingSystem operatingSystem,
+                                             [FromQuery(Name = "runtimeVer")] string urlRuntimeVersion,
                                              [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
                                              [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
             Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
 
-            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 5, urlVersion);
+            var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 5, urlVersion, urlRuntimeVersion);
 
             var response = new List<UpdatePackage>();
 
@@ -73,6 +74,7 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "version")] string urlVersion,
                                              [FromQuery(Name = "os")] OperatingSystem operatingSystem,
                                              [FromQuery(Name = "runtime")] Runtime runtime,
+                                             [FromQuery(Name = "runtimeVer")] string urlRuntimeVersion,
                                              [FromQuery(Name = "arch")] Architecture arch,
                                              [FromQuery(Name = "active")] bool activeInstall = true)
         {
@@ -104,12 +106,13 @@ namespace ServarrAPI.Controllers.Update
                         { "version", urlVersion },
                         { "os", operatingSystem.ToString() },
                         { "runtime", runtime.ToString() },
+                        { "runtimeVersion", urlRuntimeVersion },
                         { "arch", arch.ToString() },
                         { "activeinstall", activeInstall.ToString() }
                     });
             }
 
-            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 1, urlVersion);
+            var files = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 1, urlVersion, urlRuntimeVersion);
 
             var updateFile = files.FirstOrDefault();
 

@@ -8,6 +8,7 @@ namespace ServarrAPI
         public Config()
         {
             VersionGates = new List<VersionGate>();
+            MonoGates = new List<MonoGate>();
         }
 
         public string DataDirectory { get; set; }
@@ -15,6 +16,7 @@ namespace ServarrAPI
         public string Project { get; set; }
         public bool LogSql { get; set; }
         public List<VersionGate> VersionGates { get; set; }
+        public List<MonoGate> MonoGates { get; set; }
         public Dictionary<string, string> BranchRedirects { get; set; }
     }
 }

@@ -12,7 +12,7 @@ namespace ServarrAPI.Model
     {
         Task<UpdateFileEntity> Insert(UpdateFileEntity model);
         Task<UpdateFileEntity> Find(string version, string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer);
-        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null);
+        Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null, string runtimeVersion = null);
     }
 
     public class UpdateFileService : IUpdateFileService
@@ -45,12 +45,12 @@ namespace ServarrAPI.Model
             return _repo.Find(version, mappedBranch, os, runtime, arch, installer);
         }
 
-        public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null)
+        public Task<List<UpdateFileEntity>> Find(string branch, OperatingSystem os, Runtime runtime, Architecture arch, bool installer, int count, string installedVersion = null, string runtimeVersion = null)
         {
             runtime = SetRuntime(runtime);
             arch = SetArch(runtime, arch, os);
             os = SetOs(runtime, os);
-            var maxVersion = GetMaxVersion(installedVersion);
+            var maxVersion = GetMaxVersion(installedVersion, os, runtime, runtimeVersion);
             var mappedBranch = GetMappedBranch(branch);
 
             return _repo.Find(mappedBranch, os, runtime, arch, installer, count, maxVersion);
@@ -96,17 +96,37 @@ namespace ServarrAPI.Model
             return os;
         }
 
-        private Version GetMaxVersion(string currentVersion)
+        private Version GetMaxVersion(string currentVersion, OperatingSystem os, Runtime runtime, string runtimeVersion)
         {
+            var bounds = new List<Version>();
+
             if (!string.IsNullOrWhiteSpace(currentVersion))
             {
                 var installedVersion = new Version(currentVersion);
-                return _config.VersionGates.OrderBy(x => x.MaxVersion).FirstOrDefault(x => installedVersion <= x.MaxVersion)?.MaxUpgradeVersion;
+                var maxVersion = _config.VersionGates.OrderBy(x => x.MaxVersion).FirstOrDefault(x => installedVersion <= x.MaxVersion)?.MaxUpgradeVersion;
+                if (maxVersion != null)
+                {
+                    bounds.Add(maxVersion);
+                }
             }
-            else
+
+            // We override mono runtime to dotnet earlier, so just check for not windows
+            if (os != OperatingSystem.Windows && !string.IsNullOrWhiteSpace(runtimeVersion))
             {
-                return null;
+                var monoVersion = new Version(runtimeVersion);
+                var maxVersion = _config.MonoGates.OrderBy(x => x.MonoVersion).FirstOrDefault(x => monoVersion <= x.MonoVersion)?.MaxUpgradeVersion;
+                if (maxVersion != null)
+                {
+                    bounds.Add(maxVersion);
+                }
             }
+
+            if (bounds.Any())
+            {
+                return bounds.Min();
+            }
+
+            return null;
         }
 
         private string GetMappedBranch(string branch)
