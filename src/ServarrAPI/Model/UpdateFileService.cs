@@ -110,8 +110,8 @@ namespace ServarrAPI.Model
                 }
             }
 
-            // We override mono runtime to dotnet earlier, so just check for not windows
-            if (os != OperatingSystem.Windows && !string.IsNullOrWhiteSpace(runtimeVersion))
+            // We override mono runtime to dotnet earlier, so check for dotnet and not windows
+            if (runtime == Runtime.DotNet && os != OperatingSystem.Windows && !string.IsNullOrWhiteSpace(runtimeVersion))
             {
                 var monoVersion = new Version(runtimeVersion);
                 var maxVersion = _config.MonoGates.OrderBy(x => x.MonoVersion).FirstOrDefault(x => monoVersion <= x.MonoVersion)?.MaxUpgradeVersion;
