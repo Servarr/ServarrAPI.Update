@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using ServarrAPI.Model;
+using ServarrAPI.Util;
 using Architecture = System.Runtime.InteropServices.Architecture;
 using OperatingSystem = ServarrAPI.Model.OperatingSystem;
 
@@ -89,6 +90,8 @@ namespace ServarrAPI.Controllers.Update
                 };
             }
 
+            var userAgentInfo = new UserAgentInfo(Request.Headers["User-Agent"].ToString());
+
             // Dont' send metrics for dev/debug instances
             if (version.Major < 10)
             {
@@ -105,6 +108,7 @@ namespace ServarrAPI.Controllers.Update
                         { "branch", updateBranch },
                         { "version", urlVersion },
                         { "os", operatingSystem.ToString() },
+                        { "osVersion", userAgentInfo.OsVersion },
                         { "runtime", runtime.ToString() },
                         { "runtimeVersion", urlRuntimeVersion },
                         { "arch", arch.ToString() },
