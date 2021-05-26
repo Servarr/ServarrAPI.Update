@@ -105,10 +105,12 @@ namespace ServarrAPI.Controllers.Update
                     new Dictionary<string, string>
                     {
                         { "program", _project },
+                        { "requestApp", userAgentInfo.App ?? "Unknown" },
                         { "branch", updateBranch },
                         { "version", urlVersion },
                         { "os", operatingSystem.ToString() },
-                        { "osVersion", userAgentInfo.OsVersion },
+                        { "osName", userAgentInfo.Name ?? "Unknown" },
+                        { "osVersion", userAgentInfo.OsVersion ?? "Unknown" },
                         { "runtime", runtime.ToString() },
                         { "runtimeVersion", urlRuntimeVersion },
                         { "arch", arch.ToString() },
