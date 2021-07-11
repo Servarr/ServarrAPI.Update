@@ -2,7 +2,7 @@
 
 [![Build Status](https://dev.azure.com/Servarr/Servarr/_apis/build/status/Servarr.ServarrAPI.Update?branchName=master)](https://dev.azure.com/Servarr/Servarr/_build/latest?definitionId=5&branchName=master)
 
-This is the update API of Lidarr, Radarr, and Readarr.
+This is the update API of [Lidarr](https://github.com/Lidarr/Lidarr), [Prowlarr](https://github.com/Prowlarr/Prowlarr), [Radarr](https://github.com/Radarr/Radarr), and [Readarr](https://github.com/Readarr/Readarr).
 
 ## Development
 
