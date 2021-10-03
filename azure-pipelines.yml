@@ -68,7 +68,7 @@ stages:
       - task: UseDotNet@2
         displayName: 'Install .net 5.0'
         inputs:
-          version: '5.0.201'
+          version: '5.0.401'
       - task: SonarCloudPrepare@1
         displayName: 'Prepare SonarCloud'
         inputs:
