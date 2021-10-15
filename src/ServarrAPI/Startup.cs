@@ -66,6 +66,8 @@ namespace ServarrAPI
             services.AddSingleton<IUpdateService, UpdateService>();
             services.AddSingleton<IUpdateFileRepository, UpdateFileRepository>();
             services.AddSingleton<IUpdateFileService, UpdateFileService>();
+            services.AddSingleton<INotificationRepository, NotificationRepository>();
+            services.AddSingleton<INotificationService, NotificationService>();
             services.AddSingleton<ICloudflareProxy, CloudflareProxy>();
             services.AddSingleton(new GitHubClient(new ProductHeaderValue("ServarrAPI")));
             services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();

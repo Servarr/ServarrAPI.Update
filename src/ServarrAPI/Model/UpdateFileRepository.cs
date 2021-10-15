@@ -56,7 +56,7 @@ namespace ServarrAPI.Model
             var result = await Query(builder.Where<UpdateEntity>(u => u.Branch == branch).OrderBy($"update.intversion DESC LIMIT {count}"))
                 .ConfigureAwait(false);
 
-            return result.ToList();
+            return result;
         }
 
         protected override SqlBuilder Builder()
