@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -26,8 +27,26 @@ namespace ServarrAPI.Model
                                                               (f.Runtimes.Contains(runtime) || f.Runtimes.Count == 0) &&
                                                               (f.Architectures.Contains(arch) || f.Architectures.Count == 0) &&
                                                               (f.Branches.Contains(branch) || f.Branches.Count == 0) &&
-                                                              (f.Versions.Contains(version) || f.Versions.Count == 0));
+                                                              (VersionValidation(version, f.Versions) || f.Versions.Count == 0));
             return result2.ToList();
+        }
+
+        private static bool VersionValidation(string version, List<string> allowedVersions)
+        {
+            if (version == null)
+            {
+                return false;
+            }
+
+            foreach (var allowedVersion in allowedVersions)
+            {
+                if (version.StartsWith(allowedVersion.Replace("*", "")))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
