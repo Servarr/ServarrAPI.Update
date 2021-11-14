@@ -1,5 +1,4 @@
 using System;
-using System.Configuration;
 using System.IO;
 using InfluxDB.Collector;
 using Microsoft.AspNetCore.Builder;
@@ -80,7 +79,7 @@ namespace ServarrAPI
 
             services
                 .AddControllers()
-                .AddJsonOptions(options => options.JsonSerializerOptions.IgnoreNullValues = true);
+                .AddJsonOptions(options => options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
