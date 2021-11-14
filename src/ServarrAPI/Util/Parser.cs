@@ -8,7 +8,7 @@ namespace ServarrAPI.Util
 {
     public static class Parser
     {
-        public static readonly Regex NetCoreAsset = new Regex(@"(bsd|linux|linux-musl|osx|windows)-core-(x86|x64|arm|arm64)", RegexOptions.Compiled);
+        public static readonly Regex NetCoreAsset = new Regex(@"(bsd|linux|linux-musl|osx|osx-app|windows)-core-(x86|x64|arm|arm64)", RegexOptions.Compiled);
 
         public static readonly Regex WindowsAsset = new Regex(@"(windows(-core-(x86|x64|arm|arm64))?\.zip|installer.exe)$", RegexOptions.Compiled);
 
