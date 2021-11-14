@@ -42,7 +42,8 @@ namespace ServarrAPI.Model
             {
                 builder.Where<UpdateFileEntity>(f => f.Runtime == runtime && f.Architecture == arch);
             }
-            else if (os == OperatingSystem.Windows)
+            else if (os == OperatingSystem.Windows ||
+                     os == OperatingSystem.Osx)
             {
                 builder.Where<UpdateFileEntity>(f => f.Architecture == arch);
             }
