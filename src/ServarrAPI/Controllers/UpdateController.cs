@@ -77,6 +77,7 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "runtime")] Runtime runtime,
                                              [FromQuery(Name = "runtimeVer")] string urlRuntimeVersion,
                                              [FromQuery(Name = "arch")] Architecture arch,
+                                             [FromQuery(Name = "dbType")] string dbType = "SQLite",
                                              [FromQuery(Name = "active")] bool activeInstall = true)
         {
             Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
@@ -114,7 +115,8 @@ namespace ServarrAPI.Controllers.Update
                         { "runtime", runtime.ToString() },
                         { "runtimeVersion", urlRuntimeVersion },
                         { "arch", arch.ToString() },
-                        { "activeinstall", activeInstall.ToString() }
+                        { "activeinstall", activeInstall.ToString() },
+                        { "dbType", dbType }
                     });
             }
 
