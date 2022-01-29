@@ -34,7 +34,7 @@ namespace ServarrAPI.Controllers.Update
                                              [FromQuery(Name = "runtime")] Runtime runtime = Runtime.DotNet,
                                              [FromQuery(Name = "arch")] Architecture arch = Architecture.X64)
         {
-            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow);
+            Response.Headers[HeaderNames.CacheControl] = GetCacheControlHeader(DateTime.UtcNow.AddMinutes(5));
 
             var updateFiles = await _updateFileService.Find(updateBranch, operatingSystem, runtime, arch, false, 5, urlVersion, urlRuntimeVersion);
 
