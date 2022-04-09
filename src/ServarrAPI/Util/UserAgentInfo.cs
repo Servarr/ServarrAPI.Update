@@ -7,7 +7,7 @@ namespace ServarrAPI.Util
     public class UserAgentInfo
     {
         private static readonly ILogger Logger = Log.ForContext(typeof(UserAgentInfo));
-        private static readonly Regex ParseRegex = new Regex(@"(?<app>Radarr|Prowlarr|Lidarr|Readarr)\/(?<version>\d.*)\W\((?<os>.+?)(?:\s(?<os_version>\d.*))?\)",
+        private static readonly Regex ParseRegex = new Regex(@"(?<app>Radarr|Prowlarr|Lidarr|Readarr|Sonarr|Whisparr)\/(?<version>\d.*)\W\((?<os>.+?)(?:\s(?<os_version>\d.*))?\)",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public string App { get; }
