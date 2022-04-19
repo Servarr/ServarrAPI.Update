@@ -12,7 +12,7 @@ namespace ServarrAPI.Util
 
         public static readonly Regex WindowsAsset = new Regex(@"(windows(-core-(x86|x64|arm|arm64))?\.zip|installer.exe)$", RegexOptions.Compiled);
 
-        public static readonly Regex LinuxAsset = new Regex(@"linux(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
+        public static readonly Regex LinuxAsset = new Regex(@"linux(-core-(x86|x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
         public static readonly Regex LinuxMuslAsset = new Regex(@"linux-musl(-core-(x64|arm|arm64))?\.tar.gz$", RegexOptions.Compiled);
 
