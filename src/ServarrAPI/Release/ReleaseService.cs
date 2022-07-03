@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using ServarrAPI.Cloudflare;
@@ -18,12 +19,16 @@ namespace ServarrAPI.Release
         private readonly HttpClient _httpClient;
         private readonly Config _config;
 
+        private readonly ILogger<ReleaseService> _logger;
+
         public ReleaseService(IServiceProvider serviceProvider,
                               IOptions<Config> configOptions,
-                              ICloudflareProxy cloudflare)
+                              ICloudflareProxy cloudflare,
+                              ILogger<ReleaseService> logger)
         {
             _serviceProvider = serviceProvider;
             _cloudflare = cloudflare;
+            _logger = logger;
 
             _httpClient = new HttpClient();
 
@@ -74,9 +79,9 @@ namespace ServarrAPI.Release
                     var response = await _httpClient.SendAsync(request, cts.Token);
                     response.Dispose();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // don't care.
+                    _logger.LogError("Trigger Failed: {0}", ex.Message);
                 }
             }
         }
