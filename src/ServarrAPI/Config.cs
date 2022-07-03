@@ -9,6 +9,7 @@ namespace ServarrAPI
         {
             VersionGates = new List<VersionGate>();
             MonoGates = new List<MonoGate>();
+            Triggers = new List<Trigger>();
         }
 
         public string DataDirectory { get; set; }
