@@ -20,6 +20,7 @@ namespace ServarrAPI
         public bool LogSql { get; set; }
         public List<VersionGate> VersionGates { get; set; }
         public List<MonoGate> MonoGates { get; set; }
+        public List<Trigger> Triggers { get; set; }
         public Dictionary<string, string> BranchRedirects { get; set; }
     }
 }
