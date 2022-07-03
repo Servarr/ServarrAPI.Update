@@ -2,18 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using ServarrAPI.Cloudflare;
 
 namespace ServarrAPI.Release
 {
     public class ReleaseService
     {
+        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
         private readonly IServiceProvider _serviceProvider;
         private readonly ICloudflareProxy _cloudflare;
         private readonly HttpClient _httpClient;
@@ -69,7 +74,7 @@ namespace ServarrAPI.Release
                         request.Headers.Add("Authorization", "Bearer " + trigger.AuthToken);
                     }
 
-                    string json = JsonConvert.SerializeObject(new { Application = _config.Project, Branch = branch });
+                    string json = JsonSerializer.Serialize(new { Application = "qTest", Branch = branch }, JsonOptions);
                     var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
                     request.Content = httpContent;
 
