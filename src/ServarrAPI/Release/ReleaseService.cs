@@ -36,7 +36,7 @@ namespace ServarrAPI.Release
 
             var updatedBranches = await releaseSourceInstance.StartFetchReleasesAsync().ConfigureAwait(false);
 
-            if (updatedBranches != null || updatedBranches.Count > 0)
+            if (updatedBranches != null && updatedBranches.Count > 0)
             {
                 foreach (var branch in updatedBranches)
                 {
