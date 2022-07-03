@@ -74,7 +74,7 @@ namespace ServarrAPI.Release
                         request.Headers.Add("Authorization", "Bearer " + trigger.AuthToken);
                     }
 
-                    string json = JsonSerializer.Serialize(new { Application = "qTest", Branch = branch }, JsonOptions);
+                    string json = JsonSerializer.Serialize(new { Application = _config.Project, Branch = branch }, JsonOptions);
                     var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
                     request.Content = httpContent;
 
