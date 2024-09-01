@@ -19,7 +19,7 @@ namespace ServarrAPI.Cloudflare
 
     public class CloudflareProxy : ICloudflareProxy
     {
-        private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions JsonOptions = new ()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
@@ -60,6 +60,8 @@ namespace ServarrAPI.Cloudflare
         {
             if (!_enabled)
             {
+                _logger.LogTrace("CloudflareProxy is disabled");
+
                 return;
             }
 
@@ -68,14 +70,15 @@ namespace ServarrAPI.Cloudflare
 
             while (paged.Any())
             {
-                _logger.LogTrace($"Invalidating page {page} with {paged.Count()} ids");
+                _logger.LogTrace("Invalidating page {0} with {1} ids", page, paged.Count);
+
                 var files = paged
                     .SelectMany(x => new[]
-                                {
-                                    $"{_config.BaseUrl}/update/{x}",
-                                    $"{_config.BaseUrl}/update/{x}/changes",
-                                    $"{_config.BaseUrl}/update/{x}/updatefile"
-                                })
+                    {
+                        $"{_config.BaseUrl}/update/{x}",
+                        $"{_config.BaseUrl}/update/{x}/changes",
+                        $"{_config.BaseUrl}/update/{x}/updatefile"
+                    })
                     .ToList();
 
                 var payload = new CloudflareInvalidationRequest
@@ -108,7 +111,7 @@ namespace ServarrAPI.Cloudflare
                         _logger.LogError(e, "Invalidation failed");
                     }
 
-                    _logger.LogTrace($"Invalidation failed, retrying");
+                    _logger.LogTrace("Invalidation failed, retrying");
 
                     retries--;
                 }
@@ -117,9 +120,9 @@ namespace ServarrAPI.Cloudflare
             }
         }
 
-        private IEnumerable<string> GetPage(IEnumerable<string> items, int page)
+        private List<string> GetPage(IEnumerable<string> items, int page)
         {
-            return items.Skip(page * 10).Take(10);
+            return items.Skip(page * 10).Take(10).ToList();
         }
 
         private HttpRequestMessage GetInvalidationMessage(CloudflareInvalidationRequest payload)

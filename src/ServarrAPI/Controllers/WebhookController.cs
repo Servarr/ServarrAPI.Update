@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using ServarrAPI.Cloudflare;
 using ServarrAPI.Release;
 using ServarrAPI.Release.Azure;
 using ServarrAPI.Release.Github;
@@ -15,13 +16,16 @@ namespace ServarrAPI.Controllers
         private readonly Config _config;
         private readonly IBackgroundTaskQueue _queue;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ICloudflareProxy _cloudflare;
 
         public WebhookController(IBackgroundTaskQueue queue,
                                  IServiceScopeFactory serviceScopeFactory,
+                                 ICloudflareProxy cloudflare,
                                  IOptions<Config> optionsConfig)
         {
             _queue = queue;
             _serviceScopeFactory = serviceScopeFactory;
+            _cloudflare = cloudflare;
             _config = optionsConfig.Value;
         }
 
@@ -55,6 +59,25 @@ namespace ServarrAPI.Controllers
 
                 await releaseService.UpdateReleasesAsync(type);
             });
+
+            return "Thank you.";
+        }
+
+        [Route("branch/{branch}/refresh")]
+        [HttpGet]
+        public async Task<string> InvalidateCache([FromQuery(Name = "api_key")] string apiKey, [FromRoute(Name = "branch")] string branch)
+        {
+            if (!_config.ApiKey.Equals(apiKey))
+            {
+                return "No, thank you.";
+            }
+
+            if (string.IsNullOrWhiteSpace(branch))
+            {
+                return "Unknown branch.";
+            }
+
+            await _cloudflare.InvalidateBranches(new[] { branch }).ConfigureAwait(false);
 
             return "Thank you.";
         }
