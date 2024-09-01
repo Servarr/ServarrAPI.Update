@@ -43,23 +43,19 @@ namespace ServarrAPI.Release.Github
 
             var githubOrg = _config.GithubOrg ?? _config.Project;
             var releases = (await _gitHubClient.Repository.Release.GetAll(githubOrg, _config.Project)).ToArray();
+
             var validReleases = releases
-                .Where(r => r.TagName.StartsWith("v") && VersionUtil.IsValid(r.TagName.Substring(1)))
+                .Where(r => r.PublishedAt.HasValue && r.TagName.StartsWith("v") && VersionUtil.IsValid(r.TagName.Substring(1)))
                 .Take(3)
-                .Reverse();
+                .Reverse()
+                .ToArray();
 
             foreach (var release in validReleases)
             {
-                // Check if release has been published.
-                if (!release.PublishedAt.HasValue)
-                {
-                    continue;
-                }
-
                 var version = release.TagName.Substring(1);
 
                 // determine the branch
-                var branch = release.Assets.Any(a => a.Name.StartsWith(string.Format("{0}.master", _config.Project))) ? "master" : "develop";
+                var branch = release.Assets.Any(a => a.Name.StartsWith($"{_config.Project}.master")) ? "master" : "develop";
 
                 if (await ProcessRelease(release, branch, version))
                 {

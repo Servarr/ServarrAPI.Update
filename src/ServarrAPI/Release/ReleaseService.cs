@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -46,7 +45,7 @@ namespace ServarrAPI.Release
 
             var updatedBranches = await releaseSourceInstance.StartFetchReleasesAsync().ConfigureAwait(false);
 
-            if (updatedBranches != null && updatedBranches.Count > 0)
+            if (updatedBranches is { Count: > 0 })
             {
                 foreach (var branch in updatedBranches)
                 {
@@ -74,7 +73,7 @@ namespace ServarrAPI.Release
                         request.Headers.Add("Authorization", "Bearer " + trigger.AuthToken);
                     }
 
-                    string json = JsonSerializer.Serialize(new { Application = _config.Project, Branch = branch }, JsonOptions);
+                    var json = JsonSerializer.Serialize(new { Application = _config.Project, Branch = branch }, JsonOptions);
                     var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
                     request.Content = httpContent;
 
