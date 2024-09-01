@@ -131,7 +131,7 @@ namespace ServarrAPI.Release.Github
             return isNewRelease;
         }
 
-        private async Task ProcessAsset(Octokit.ReleaseAsset releaseAsset, string branch, int updateId)
+        private async Task ProcessAsset(ReleaseAsset releaseAsset, string branch, int updateId)
         {
             var operatingSystem = Parser.ParseOS(releaseAsset.Name);
             if (!operatingSystem.HasValue)
@@ -144,40 +144,48 @@ namespace ServarrAPI.Release.Github
             var installer = Parser.ParseInstaller(releaseAsset.Name);
 
             // Calculate the hash of the zip file.
-            var releaseZip = Path.Combine(_config.DataDirectory, branch.ToString().ToLower(), releaseAsset.Name);
-            string releaseHash;
+            var releaseZip = Path.Combine(_config.DataDirectory, branch.ToLowerInvariant(), releaseAsset.Name);
 
-            if (!File.Exists(releaseZip))
+            try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
+                if (!File.Exists(releaseZip))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(releaseZip));
 
-                using var fileStream = File.OpenWrite(releaseZip);
-                using var artifactStream = await _httpClient.GetStreamAsync(releaseAsset.BrowserDownloadUrl);
-                await artifactStream.CopyToAsync(fileStream);
+                    await using var fileStream = File.OpenWrite(releaseZip);
+                    await using var artifactStream = await _httpClient.GetStreamAsync(releaseAsset.BrowserDownloadUrl);
+                    await artifactStream.CopyToAsync(fileStream);
+                }
+
+                string releaseHash;
+                await using (var stream = File.OpenRead(releaseZip))
+                using (var sha = SHA256.Create())
+                {
+                    releaseHash = BitConverter.ToString(await sha.ComputeHashAsync(stream)).Replace("-", "").ToLowerInvariant();
+                }
+
+                // Add to database.
+                var updateFile = new UpdateFileEntity
+                {
+                    UpdateId = updateId,
+                    OperatingSystem = operatingSystem.Value,
+                    Architecture = arch,
+                    Runtime = runtime,
+                    Filename = releaseAsset.Name,
+                    Url = releaseAsset.BrowserDownloadUrl,
+                    Hash = releaseHash,
+                    Installer = installer
+                };
+
+                await _updateFileService.Insert(updateFile).ConfigureAwait(false);
             }
-
-            using (var stream = File.OpenRead(releaseZip))
-            using (var sha = SHA256.Create())
+            finally
             {
-                releaseHash = BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLower();
+                if (File.Exists(releaseZip))
+                {
+                    File.Delete(releaseZip);
+                }
             }
-
-            File.Delete(releaseZip);
-
-            // Add to database.
-            var updateFile = new UpdateFileEntity
-            {
-                UpdateId = updateId,
-                OperatingSystem = operatingSystem.Value,
-                Architecture = arch,
-                Runtime = runtime,
-                Filename = releaseAsset.Name,
-                Url = releaseAsset.BrowserDownloadUrl,
-                Hash = releaseHash,
-                Installer = installer
-            };
-
-            await _updateFileService.Insert(updateFile).ConfigureAwait(false);
         }
     }
 }
