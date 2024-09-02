@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Logging;
 using Microsoft.Extensions.Logging;
@@ -53,7 +53,7 @@ namespace ServarrAPI.Datastore.Migration.Framework
 
         protected override void WriteError(Exception exception)
         {
-            _logger.LogInformation("Error", exception);
+            _logger.LogInformation(exception, "Error");
         }
     }
 }
