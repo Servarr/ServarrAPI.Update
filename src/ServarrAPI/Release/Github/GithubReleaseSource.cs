@@ -54,6 +54,7 @@ namespace ServarrAPI.Release.Github
 
             var validReleases = releases.ToArray()
                 .Where(r => r.PublishedAt.HasValue && r.TagName.StartsWith("v") && VersionUtil.IsValid(r.TagName.Substring(1)))
+                .OrderByDescending(r => r.PublishedAt)
                 .Take(3)
                 .Reverse()
                 .ToArray();
